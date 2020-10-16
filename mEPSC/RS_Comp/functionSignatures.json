@@ -1,0 +1,18 @@
+{
+  "_schemaVersion": "1.0.0",
+  "RsCorrection":
+  {
+     "inputs":
+     [
+        {"name":"data", "kind":"required", "type":["numeric"], "purpose":"data trace to be corrected"},
+	{"name":"Rs", "kind":"required", "type":["numeric", ">0"], "purpose":"Remaining series resistance (in Ohm)"},
+	{"name":"Cm", "kind":"required", "type":["numeric", ">0"], "purpose":"Cell membrane capacitance (in Farad)"},
+	{"name":"Vhold", "kind":"required", "type":["numeric"],"purpose":"Holding potential (in V)"},
+	{"name":"Vrev", "kind":"required", "type":["numeric"], "purpose":"Reversal Potential (in V)"},
+	{"name":"SR", "kind":"required", "type":["numeric",">0"], "purpose":"Sampling Rate (in Hz)"},
+	{"name":"fractionV", "kind":"namevalue", "type":["numeric"],"purpose":"voltage error to be compensated [0-1]"},
+	{"name":"fractionC", "kind":"namevalue", "type":["numeric"],"purpose":"fraction capacitative filtering error to be compensated [0-1]"},
+	{"name":"fc", "kind":"namevalue", "type":["numeric"],"purpose":"cutoff frequency for filter to smooth capacitative current correction (in Hz)"}
+     ]
+  }
+}
