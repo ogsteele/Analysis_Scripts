@@ -1,0 +1,36 @@
+%% AutoPlot script
+% Script to plot the data on a rolling window in 'real time' as determined
+% by the sampling rate of the recording
+
+%% Parameters
+sample_rate = 20000;
+
+%% Load in Data
+
+% Select raw trace to visualise
+title_str = "1. Select raw file of recording";
+if ~ispc; menu(title_str,'OK'); end
+clear('title_str')
+[file,path,~] = uigetfile('*.tdms');
+% Display file selection selection
+if isequal(file,0)
+   disp('User selected Cancel')
+   % If user selects cancel here, script will end here.
+   return
+else
+    disp(['User selected ', fullfile(path, file)])
+    % Navigate to directory and load file with ephysIO
+    cd(path)
+    S = ephysIO(file);
+end
+
+%% Plots figures
+% Plot whole trace, filtered at 1kHz 
+    Time = S.array(:,1);
+    Trace = S.array(:,2);
+    YF = filter1(Trace, Time, 0, 1000);
+    filtered_whole = figure;
+    plot(YF)
+    title('Filtered Whole Trace')
+ 
+%% Save recording as .phy

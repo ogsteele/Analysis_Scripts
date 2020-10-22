@@ -11,4 +11,7 @@ Collection of mEPSC analysis scripts, see below for a brief description
 ## TonicShift.m  
 *Script used to calculate the tonic current change over the course of a recording*
 
-Note: Subtraction, Access and TonicShift likely to be packaged into a function together for ease of analysis
+**Note:** *Subtraction, Access and TonicShift likely to be packaged into a function together for ease of analysis*
+
+## AutoPlot.m 
+*Script used to open .tdms data and visualise the data with a rolling window of a selected region* 
