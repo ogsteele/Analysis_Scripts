@@ -78,7 +78,6 @@ if exist('S','var') == 1
     axis([0 numpoints/sample_rate -60 0])
     
     % get points from the first graph
-    subplot(2,1,1)
     [xi,~] = getpts;
     selected_point = round(xi*sample_rate);
     
@@ -86,7 +85,7 @@ if exist('S','var') == 1
     hold on
     subplot(2,1,1)
     x1=selected_point/sample_rate; % convert point to seconds
-    x2=selected_point/sample_rate+40;
+    x2=selected_point/sample_rate;
     y1=0;
     y2=(-60);
     x = [x1, x2, x2, x1, x1];
