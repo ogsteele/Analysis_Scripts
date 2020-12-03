@@ -53,5 +53,8 @@ else
     clearvars -except 'baseline'
 end
     
+
+%Note don't forget about T =
+%table2array(readtable('20201021_000_access.txt')) to get text into arrays
     
     

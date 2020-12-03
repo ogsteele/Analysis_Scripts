@@ -58,10 +58,10 @@ end
     adjusted_AMPA = AMPA.array(:,2) - basemean_AMPA;
     clear('basemean_AMPA') 
     % Compensate for access resistance change
-    if exist('shift_percent','var') == 1
-        adjusted_AMPA = adjusted_AMPA*((100 + shift_percent)/100);
-    else
-    end
+    %if exist('shift_percent','var') == 1
+    %    adjusted_AMPA = adjusted_AMPA*((100 + shift_percent)/100);
+    %else
+    %end
 % Calculate the NMDAR mediated trace
 NMDA = AMPA;
 NMDA.array(:,2) = adjusted_COMP - adjusted_AMPA;
