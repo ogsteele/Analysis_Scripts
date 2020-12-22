@@ -231,7 +231,7 @@ if plots == true
     xlabel('Time (s)')
     ylabel('Current (pA)')
     hold on
-    plot(x2,smooth(median_YF),'linewidth',4,'color',[0 0.4470 0.7410])
+    plot(x2,smooth(median_YF),'linewidth',2,'color',[0 0.4470 0.7410])
     hold off % not made lighter
     sgtitle('Raw WCP Values by epoch')
     
@@ -297,7 +297,7 @@ if plots == true
     xlabel('Time (s)')
     ylabel('Current (pA)')
     hold on
-    plot(x2,smooth(median_YF),'linewidth',4,'color',[0 0.4470 0.7410])
+    plot(x2,smooth(median_YF),'linewidth',2,'color',[0 0.4470 0.7410])
     hold off % not made lighter
     sgtitle('Compensated WCP Values by epoch')
     
