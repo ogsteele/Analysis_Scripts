@@ -15,3 +15,11 @@ Collection of mEPSC analysis scripts, see below for a brief description
 
 ## AutoPlot.m 
 *Script used to open .tdms data and visualise the data with a rolling window of a selected region* 
+
+## Noise.m 
+*Script that runs through all summary.txt files produced by eventer and then plots (and saves) the a.u. SD noise levels
+
+## Trimmer.m 
+*Script that merely opens up the file with ephysIO, trims if necessary, then resaves it as `filename_trimmed.phy`
+
+
