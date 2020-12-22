@@ -14,7 +14,7 @@ amplifier_gain = 100;
 title_str = "1. Select raw file of recording";
 if ~ispc; menu(title_str,'OK'); end
 clear('title_str')
-[file,path,~] = uigetfile('*.tdms','1. Select raw .tdms of recording');
+[file,path,~] = uigetfile('*.*','1. Select raw .tdms of recording');
 % Display file selection selection
 if isequal(file,0)
    disp('User selected Cancel')

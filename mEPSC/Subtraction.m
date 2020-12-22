@@ -10,7 +10,7 @@
 % Use ephysIO.mat to load in the extracted ensembles from Eventer
 
 % Select compound events first
-title_str = "1. Select the ensemble average trace for compound events";
+title_str = "1. Select the ensemble average trace for COMP events";
 if ~ispc; menu(title_str,'OK'); end
 clear('title_str')
 [file,path,~] = uigetfile('*.phy');
@@ -57,10 +57,6 @@ end
     basemean_AMPA = mean(AMPA.array(1:100,2));
     adjusted_AMPA = AMPA.array(:,2) - basemean_AMPA;
     clear('basemean_AMPA') 
-    % Compensate for access resistance change
-    %if exist('shift_percent','var') == 1
-    %    adjusted_AMPA = adjusted_AMPA*((100 + shift_percent)/100);
-    %else
     %end
 % Calculate the NMDAR mediated trace
 NMDA = AMPA;
@@ -85,9 +81,9 @@ NMDA.array(:,2) = adjusted_COMP - adjusted_AMPA;
     set(gcf,'color','w');
 
 % Tidy up
-clear('ans','time','adjusted_AMPA','adjusted_COMP')
+%clear('ans','time','adjusted_AMPA','adjusted_COMP')
 %  Navigate out of eventer's subfolders, to the root of the cell
 cd ../../..
-mkdir Subtraction_Results
-save('Subtraction_Results/ensembles.mat','AMPA','COMP','NMDA');
-saveas(subfig,'Subtraction_Results/sub_fig.pdf')
+%mkdir Subtraction_Results
+%save('Subtraction_Results/ensembles.mat','AMPA','COMP','NMDA');
+%saveas(subfig,'Subtraction_Results/sub_fig.pdf')
