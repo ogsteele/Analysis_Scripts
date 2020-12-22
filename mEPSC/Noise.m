@@ -102,11 +102,13 @@ if ~ispc; menu(title_str,'OK'); end
 clear title_str ans
 
 % save as name of file in dir
-file = strcat(file(1:end-4),'_noise.mat'); 
+a = split(file,'.');
+file = append(char(a(1)),'_noise.mat');
 save(file,'noise_output')
 
 % save figure
-file = strcat(file(1:end-4),'_noise.pdf');
+a = split(file,'.');
+file = append(char(a(1)),'.pdf');
 saveas(gcf,file)
 %% Define Functions
 

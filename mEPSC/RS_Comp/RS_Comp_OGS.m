@@ -17,14 +17,13 @@
 % .comp_wcp = rs comp whole cell properties
 % .comp_ephysIO = ephysIO output from rs comp trace
 
-% figures
-% 1
-% 2
+% figures:
+% raw wcp values and filtered trace
+% compensated wcp values and filtered trace
 %% TO DO
 % Consider final output structures
 % Change units on axis 7 of master subplot
 % add units and titles to subplots
-% plot raw vs compensated values
 
 % start with a blank workspace 
 clear
@@ -164,7 +163,9 @@ wcp_corr_penn = WCP(corr_p_splits,Param);
 s(:,2) = (vertcat(corr_p_splits(:))) * 1e-12;
 t = 0:(1/Param.sample_rate):(1/Param.sample_rate)*(length(s));
 s(:,1) = t(1:end-1);
-ephysIO((append(filename(1:end-5),'_rscomp','.phy')),s,S.xunit,S.yunit,S.names,S.notes,'int16')
+a = split(filename,'.');
+filename_comp = append(char(a(1)),'_rscomp.phy');
+ephysIO(filename_comp,s,S.xunit,S.yunit,S.names,S.notes,'int16')
 
 
 % output
@@ -180,59 +181,59 @@ comp_output.comp_wcp = wcp_corr_penn;
 S.array = s; % swap raw array with compensated array
 comp_output.comp_ephysIO = S;
 
+% save as name of file in dir
+a = split(file,'.');
+file = append(char(a(1)),'_wcp.mat');
+save(file,'comp_output')
+
 % tidy up
-clear sampInt R_s C_m V_hold s t comp_penn filename 
+clear sampInt R_s C_m V_hold s t comp_penn filename filename_comp a 
 %% Plots
 if plots == true
     disp("Plots enabled (to disable set plots = false)")
-    [YF, median_YF, x] = TestPulse_rm(splits,Param);
+    [YF, median_YF, x, x2] = TestPulse_rm(splits,Param);
     % holding current (Ih) plot
     figure
     set(gcf,'color','w');
     ax1 = subplot(3,3,1);
     plot(ax1, wcp_raw.Ih)
     title('Ih in pA')
-    xlabel('epoch')
     hold on; plot(ax1, movmean(wcp_raw.Ih,7)); hold off
     % series resistance (Rs) plot
     ax2 = subplot(3,3,2);
     plot(wcp_raw.Rs)
     title('Rs in MOhm')
-    xlabel('epoch')
     hold on; plot(movmean(wcp_raw.Rs,7)); hold off
     % input resistance (Rin) plot
     ax3 = subplot(3,3,3);
     plot(wcp_raw.Rin)
     title('Rin in MOhm')
-    xlabel('epoch')
     hold on; plot(movmean(wcp_raw.Rin,7)); hold off
     % memrane resistance (Rm) plot
     ax4 = subplot(3,3,4);
     plot(wcp_raw.Rm)
     title('Rm in MOhm')
-    xlabel('epoch')
     hold on; plot(movmean(wcp_raw.Rm,7)); hold off
     % capacitace (Cm) plot
     ax5 = subplot(3,3,5);
     plot(wcp_raw.Cm)
-    title('Capacitance in pF')
-    xlabel('epoch')
+    title('Cm in pF')
     hold on; plot(movmean(wcp_raw.Cm,7)); hold off
     % steady state current (Iss) plot
     ax6 = subplot(3,3,6);
     plot(wcp_raw.Iss)
     title('Iss in pA')
-    xlabel('epoch')
     hold on; plot(movmean(wcp_raw.Iss,7)); hold off
     % plot without test pulse
     ax7 = subplot(3,3,[7,9]);
-    plot(YF,'Color',[0 0.4470 0.7410 0.2]) % to make lighter
-    title('filter')
-        %   xlabel('Time (s)')
+    plot(x,YF,'Color',[0 0.4470 0.7410 0.2]) % to make lighter
+    title('Recording w/ 1 kHz LPF')
+    xlabel('Time (s)')
+    ylabel('Current (pA)')
     hold on
-    plot(x,smooth(median_YF),'linewidth',4,'color',[0 0.4470 0.7410])
+    plot(x2,smooth(median_YF),'linewidth',4,'color',[0 0.4470 0.7410])
     hold off % not made lighter
-    sgtitle('Raw Values')
+    sgtitle('Raw WCP Values by epoch')
     
     % set axis properties
     ax1.LineWidth = 2;
@@ -251,58 +252,54 @@ if plots == true
     ax7.Box = 'off';
     
     % save figure1
-    file_raw = strcat(file(1:end-5),'_raw.pdf');
+    a = split(file,'.');
+    file_raw = append(char(a(1)),'_raw.pdf');
     saveas(gcf,file_raw)
     
     % create figure 2
-    [YF, median_YF, x] = TestPulse_rm(corr_p_splits,Param);
+    [YF, median_YF, x, x2] = TestPulse_rm(corr_p_splits,Param);
     % holding current (Ih) plot
     figure
     set(gcf,'color','w');
     ax1 = subplot(3,3,1);
     plot(ax1, wcp_corr_penn.Ih)
     title('Ih in pA')
-    xlabel('epoch')
     hold on; plot(ax1, movmean(wcp_corr_penn.Ih,7)); hold off
     % series resistance (Rs) plot
     ax2 = subplot(3,3,2);
     plot(wcp_corr_penn.Rs)
     title('Rs in MOhm')
-    xlabel('epoch')
     hold on; plot(movmean(wcp_corr_penn.Rs,7)); hold off
     % input resistance (Rin) plot
     ax3 = subplot(3,3,3);
     plot(wcp_corr_penn.Rin)
     title('Rin in MOhm')
-    xlabel('epoch')
     hold on; plot(movmean(wcp_corr_penn.Rin,7)); hold off
     % memrane resistance (Rm) plot
     ax4 = subplot(3,3,4);
     plot(wcp_corr_penn.Rm)
     title('Rm in MOhm')
-    xlabel('epoch')
     hold on; plot(movmean(wcp_corr_penn.Rm,7)); hold off
     % capacitace (Cm) plot
     ax5 = subplot(3,3,5);
     plot(wcp_corr_penn.Cm)
-    title('Capacitance in pF')
-    xlabel('epoch')
+    title('Cm in pF')
     hold on; plot(movmean(wcp_corr_penn.Cm,7)); hold off
     % steady state current (Iss) plot
     ax6 = subplot(3,3,6);
     plot(wcp_corr_penn.Iss)
     title('Iss in pA')
-    xlabel('epoch')
     hold on; plot(movmean(wcp_corr_penn.Iss,7)); hold off
     % plot without test pulse
     ax7 = subplot(3,3,[7,9]);
-    plot(YF,'Color',[0 0.4470 0.7410 0.2]) % to make lighter
-    title('filter')
-        %   xlabel('Time (s)')
+    plot(x,YF,'Color',[0 0.4470 0.7410 0.2]) % to make lighter
+    title('Recording w/ 1 kHz LPF')
+    xlabel('Time (s)')
+    ylabel('Current (pA)')
     hold on
-    plot(x,smooth(median_YF),'linewidth',4,'color',[0 0.4470 0.7410])
+    plot(x2,smooth(median_YF),'linewidth',4,'color',[0 0.4470 0.7410])
     hold off % not made lighter
-    sgtitle('Compensated Values')
+    sgtitle('Compensated WCP Values by epoch')
     
     % set axis properties
     ax1.LineWidth = 2;
@@ -321,12 +318,13 @@ if plots == true
     ax7.Box = 'off';
     
     % save figure2
-    file_raw = strcat(file(1:end-5),'_rscomp.pdf');
+    a = split(file,'.');
+    file_raw = append(char(a(1)),'_rscomp.pdf');
     saveas(gcf,file_raw)
     
     clear plots ax1 ax2 ax3 ax4 ax5 ax6 ax7 YF median_YF i x fraction ans file
     clear wcp_raw wcp_corr_penn
-    clear splits S Param corr_p_splits
+    clear S Param corr_p_splits x2 splits file_raw a
 else
     disp("Plots disabled (to enable set plots = true)")
     clear('plots')
@@ -508,7 +506,7 @@ end
 
 
 
-function [tprm,med,x] = TestPulse_rm(data,parameters)
+function [tprm,med,x,x2] = TestPulse_rm(data,parameters)
 
 % remove test pulse and plot without
 % calculate the pre pulse mean to fill the gaps
@@ -521,18 +519,18 @@ for i = 1:size(tprm_splits,2)
     median_YF(i) = median(tprm_splits(:,i)); % calculate the median of the splits
 end
 % concatenate tprm_splits
-tprm_splits = vertcat(tprm_splits(:));
+tprm_splits_conc = vertcat(tprm_splits(:));
 % apply a filter to clean the look of the data
-t = (0:size(tprm_splits,1)-1)';
+t = (0:size(tprm_splits_conc,1)-1)';
 t = t./parameters.sample_rate;
-YF = filter1(tprm_splits, t, 0, 300);
-x = linspace(0,size(tprm_splits,1),size(data,2));
+YF = filter1(tprm_splits_conc, t, 0, 300);
+x = linspace(0,(size(tprm_splits_conc,1)/20000),size(tprm_splits_conc,1));
 %figure
-%plot(YF,'Color',[0 0.4470 0.7410 0.2]) % to make lighter
+%plot(x,YF,'Color',[0 0.4470 0.7410 0.2]) % to make lighter
 %title('filter')
-%x = linspace(0,size(tprm_splits,1),size(data,2));
+x2 = linspace(0,(size(tprm_splits_conc,1)/20000),size(median_YF,1));
 %hold on
-%plot(x,smooth(median_YF),'linewidth',4,'color',[0 0.4470 0.7410]) % not made lighter
+%plot(x2,smooth(median_YF),'linewidth',4,'color',[0 0.4470 0.7410]) % not made lighter
 tprm = YF;
 med = median_YF;
 end
