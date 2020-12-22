@@ -22,4 +22,3 @@ Collection of mEPSC analysis scripts, see below for a brief description
 ## Trimmer.m 
 *Script that merely opens up the file with ephysIO, trims if necessary, then resaves it as* `filename_trimmed.phy` 
 
-
