@@ -20,6 +20,6 @@ Collection of mEPSC analysis scripts, see below for a brief description
 *Script that runs through all summary.txt files produced by eventer and then plots (and saves) the a.u. SD noise levels*
 
 ## Trimmer.m 
-*Script that merely opens up the file with ephysIO, trims if necessary, then resaves it as `filename_trimmed.phy` *
+*Script that merely opens up the file with ephysIO, trims if necessary, then resaves it as* `filename_trimmed.phy` 
 
 
