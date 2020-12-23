@@ -2,7 +2,13 @@
 
 Plans to develop a script to accurately compensate for series resistance changes throughout the course of longer recordings of smaller events such as mEPSCs.  
 
-Will build off work by Christian Kleine ([RsCorrection.m](https://www.mathworks.com/matlabcentral/fileexchange/69249-offline-series-resistance-correction)) and Andrew Penn ([rscomp_Penn.m](https://github.com/acp29/Peaker/blob/master/manip/rscomp.m)) and outline the workflow below as i begin writing.   
+Will build off work by Andrew Penn ([rscomp_Penn.m](https://github.com/acp29/Peaker/blob/master/manip/rscomp.m)).
+
+## RS_Comp_OGS.m
+
+Script aiming to perform offline series resistance compensation. Currently aimed at .tdms files (due to scaling and ephysIO integration), but could (and definitely should) adapt this to be able to work for other file formats to fully leverage ephysIO.
+
+Functionality currently includes data splitting, estimation of whole cell properties, Rs compensation and saving. Convenient plots are provided to see difference. 
 
 ## Useful reading;
 *Traynelis 1998* [Software based correction of single compartment series resistance errors](https://reader.elsevier.com/reader/sd/pii/S016502709800140X?token=96FC34C471B6073F72A93ACB903AAD18722E80F62A05B26AAB45CD3ABD184C199DAB109016855A5F90E4E77CBEB9ED44)  
