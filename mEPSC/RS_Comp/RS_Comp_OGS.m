@@ -184,7 +184,10 @@ comp_output.comp_ephysIO = S;
 % save as name of file in dir
 a = split(file,'.');
 file = append(char(a(1)),'_wcp.mat');
-save(file,'comp_output')
+% save(file,'comp_output')
+% if larger than 2GB error will arise, use this line instead
+save(file, 'comp_output', '-v7.3')
+% NOTE TO CHANGE BACK AFTER
 
 % tidy up
 clear sampInt R_s C_m V_hold s t comp_penn filename filename_comp a 

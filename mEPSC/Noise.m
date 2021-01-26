@@ -1,7 +1,7 @@
 %% Noise analysis
 % Author: O.G. Steele
 % Date: 10.12.20
-% Description: 
+% Description:
 %   Simple script to extract the SD of the noise from the summary .txt
 %   produced after a simple pearsons analysis of a whole recording split
 %   into epochs as defined by test pulse interval
