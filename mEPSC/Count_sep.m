@@ -1,5 +1,8 @@
 %% Count_sep
 % script to count the events, and then seperate dependant on region.
+% this provides you with Compund and AMPAR events & medians
+
+% will also save NMDAR and AMPAR median .phy recordings
 
 % clear workspace to begin
 close all
@@ -120,6 +123,29 @@ else
 end
 
 save('ml_out.mat','ml_out')
+
+
+%% Do the job event_sep
+NMDAR = ml_out.Compound.median - ml_out.AMPAR.median;
+plot(NMDAR)
+AMPAR = ml_out.AMPAR.median;
+hold on
+plot(AMPAR)
+legend('NMDAR','AMPAR')
+  
+% save recordings
+% save as seperate .phy (use the filename variable)
+time = 5e-5*[1:1001]';
+% NMDAR
+a = split(filename,'.');
+name = append(char(a(1)),'_NMDAR.phy');
+ephysIO(name,[time NMDAR],'s','A')
+% AMPAR
+a = split(filename,'.');
+name = append(char(a(1)),'_AMPAR.phy');
+ephysIO(name,[time AMPAR],'s','A')
+
+%%
 
 function [notes1] = notesimport(filename) 
 % Set up the Import Options and import the data
