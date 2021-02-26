@@ -1,4 +1,43 @@
-function waves = extractor
+%% Training Set Creator
+% Simple script, bundled with function, to create a training set.
+
+% ask if user is ready
+answer = menu('Ready to create a training set?','nope','yep');
+% if answer is no ...
+if answer == 1
+    % ... end loop and tell the user to type when ready
+    disp('Type "extractor" when ready')
+    return
+% but if the answer is yes ...
+elseif answer == 2
+    % ... let's go!
+    disp('Lets go!')
+    % run the extractr function below, with the output as waves
+    waves = extractr;
+    % create the time for later
+    time = 5e-5*[1:size(waves,1)]';
+    % infinite for loop for more waves added onto the end
+    for k = 1:inf
+        % ask the user if they want to add another
+        answer = menu('add another?','nope','yep');
+        % if answer is no
+        if answer == 1
+            % run ephysIO and concatenate time and waves to save the data
+            ephysIO('trainingset.phy',[time waves],'s','A')
+            % display that you're done here
+            disp('Done here, look in the directory for the training set')
+            return
+        % if the answer is yes though, run it again and go again    
+        elseif answer == 2
+            some_vector = extractr;
+            % concatenate next to 
+            waves = [waves some_vector];
+        end
+    end
+end
+
+
+function waves = extractr
 %% Load in w/ ePhysIO
 % Select raw trace to visualise
 title_str = "1. Select raw compensated recording";
@@ -36,15 +75,4 @@ wave_end_dp = wave_end_s * 20000;
 wave_1 = S.array(wave_start_dp(1):wave_end_dp(1),2);
 wave_2 = S.array(wave_start_dp(2):wave_end_dp(2),2);
 waves = [wave_1 wave_2];
-
-% your_result = [];
-% for ii = whatever
-%  some_vector = some_function(of_something);
-% concatenate next to 
-%  your_result = [your_result {some_vector}];
-% end
-% title_str = "Add another recording?";
-% one_more = menu(title_str,'Yes','No');
-% 1 = Yes, 2 = No
-% clear('title_str')
 end

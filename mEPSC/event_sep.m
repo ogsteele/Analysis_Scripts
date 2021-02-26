@@ -26,6 +26,7 @@ end
 
 %% calculate the NMDAR recordings
 % subtract AMPAR from compound
+% Compound = ml_out.Compound.median
 NMDAR = ml_out.Compound.median - ml_out.AMPAR.median;
 plot(NMDAR)
 AMPAR = ml_out.AMPAR.median;
@@ -36,11 +37,11 @@ legend('NMDAR','AMPAR')
 %% save recordings
 % save as seperate .phy (use the filename variable)
 time = 5e-5*[1:1001]';
-% AMPAR
+% NMDAR
 a = split(filename,'.');
 name = append(char(a(1)),'_NMDAR.phy');
 ephysIO(name,[time NMDAR],'s','A')
-% NMDAR
+% AMPAR
 a = split(filename,'.');
 name = append(char(a(1)),'_AMPAR.phy');
 ephysIO(name,[time AMPAR],'s','A')
