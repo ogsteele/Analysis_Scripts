@@ -5,7 +5,7 @@
 % Cell Information
     % split the path and copy to clipboard
     dirpath = split(pwd,'/');
-    relevant = dirpath(12:17);
+    relevant = dirpath(10:15);
     % get the notes
     listing = dir('*notes.txt');
     notes = notesimport(fullfile(listing.folder,listing.name));
