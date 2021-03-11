@@ -345,7 +345,7 @@ function y = rscomp (y, sampInt, fraction, R_s, C_m, V_hold, V_rev)
 % sampInt is sampling interval (in microseconds)
 % fraction is the amount of compensation (1.0 = 100%)
 % R_s is series resistance (in Mohm)
-% C_m is cell time constant C_m (in ms)
+% C_m is cell capacitance (in pF)
 % V_hold is holding potential (in mV)
 % V_rev is reversal potential of the conductance (in mV)
 
