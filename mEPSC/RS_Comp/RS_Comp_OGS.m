@@ -39,7 +39,7 @@ comp_penn = true; % leave as true (logical)
 Param.amp_scalef = 0.5; % default scale factor for amplifier used in V / nA
 Param.sample_rate = 20000; % in Hz
 Param.amplifier_scale = 2e09; % actually 2e-09, however 2e09 reverses this
-Param.amplifier_gain = 100; % gain set by experimenter
+Param.amplifier_gain = 100; % gain set by experimenter (default is 100)
 Param.split_length = 10; % in seconds, frequency of test pulses
 % Test pulse settings
 Param.pulse_amp = -0.002; % in V

@@ -40,26 +40,36 @@ Collection of mEPSC analysis scripts, see below for a brief description
 
 # Suggested processing pathway
 
+**Data cleaning**
+
 1.  Raw mEPSC input as .tdms
 
 2.  Trim/Clip with `trimmer.m` or `clipper.m`
 
 3.  Compensate for series resistance change across the recording with `RS_Comp.m`
 
-4.  Generate a pearsons fit with Eventer
+**Early properties (to be automated)**
 
-5.  Scan through this calculate the noise levels with `noise.m`
+1.  Generate a pearsons fit with Eventer
 
-6.  Extract other relevent properties with `property_extractor.m`
+2.  Scan through this calculate the noise levels with `noise.m`
 
-7.  Calculate a training set with `trainingset.m`
+3.  Extract other relevent properties with `property_extractor.m`
 
-8.  Train model with eventer and perform full analysis
+**Model training**
 
-9.  Seperate the events using `count_sep.m`
+1.  Calculate a training set with `trainingset.m`
 
-10. Concatenate ensemble averages into single array for StimFit with `conc_all.m`
+2.  Train model with eventer and extract events using this model into a new output
 
-11. Perform stimfit analysis making sure to save average trace as .h5
+**Process for Stimfit**
 
-12. Plot neat overlay traces with `overlay_plotter.m`
+1.  Seperate the events using `count_sep.m`
+
+2.  Concatenate ensemble averages into single array for StimFit with `conc_all.m`
+
+**Stimfit**
+
+1.  Perform stimfit analysis making sure to save average trace as .h5
+
+2.  Plot neat overlay traces with `overlay_plotter.m`
