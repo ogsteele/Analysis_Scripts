@@ -13,21 +13,28 @@ clear
 title_str = "1. Select event counts";
 menu(title_str,'OK');
 clear('title_str')
-[file,path,~] = uigetfile('*.*','1. Select event counts');
-% Display file selection selection
-if isequal(file,0)
+
+filepath = uigetdir();
+%[file,path,~] = uigetfile('*.*','1. Select event counts');
+% Display file selection selectio
+%if isequal(file,0)
+if isequal(filepath,0)
    disp('User selected Cancel')
    % If user selects cancel here, script will end here.
    return
 else
-    disp(['User selected ', fullfile(path, file)])
-    filename = file;
+    disp(['User selected ', filepath])
+    %disp(['User selected ', fullfile(path, file)])
+    filename = filepath;
+    %filename = file;
     % Navigate to directory and load file with ephysIO
-    cd(path)
-    counts = table2array(readtable(file));
+    count_filepath = fullfile(filepath,'eventer.output/All_events/event_counts.txt');
+    cd(fullfile(filepath,'eventer.output/All_events'));
+    counts = table2array(readtable(count_filepath));
     waves = size(counts,1);
 end
 % tidy workspace
+figure
 clear('path','ans')
 plot(cumsum(counts))
 title('Cumulative sum of events')
@@ -56,7 +63,7 @@ comp_event_num = cum_counts(Comp_end);
 %% Load in w/ ePhysIO
 % Select event data to visualise
 % already in correct directory
-S = ephysIO('event_data.phy');
+S = ephysIO(fullfile(filepath,'eventer.output/All_events/event_data.phy'));
 
 %% Seperate and average sections
 % according to drug application and wave
@@ -127,24 +134,27 @@ save('ml_out.mat','ml_out')
 
 %% Do the job event_sep
 NMDAR = ml_out.Compound.median - ml_out.AMPAR.median;
-plot(NMDAR)
 AMPAR = ml_out.AMPAR.median;
-hold on
-plot(AMPAR)
-legend('NMDAR','AMPAR')
-  
+COMP = ml_out.Compound.median;
 % save recordings
 % save as seperate .phy (use the filename variable)
 time = 5e-5*[1:1001]';
+
 % NMDAR
-a = split(filename,'.');
-name = append(char(a(1)),'_NMDAR.phy');
+a = split(filename,'/');
+name = append(char(a(end-3)),'_',char(a(end-2)),'_',char(a(end-1)),'_average_NMDAR.phy');
+%name = append(char(a(1)),'_NMDAR.phy');
 ephysIO(name,[time NMDAR],'s','A')
+
 % AMPAR
-a = split(filename,'.');
-name = append(char(a(1)),'_AMPAR.phy');
+name = append(char(a(end-3)),'_',char(a(end-2)),'_',char(a(end-1)),'_average_AMPAR.phy');
+%name = append(char(a(1)),'_AMPAR.phy');
 ephysIO(name,[time AMPAR],'s','A')
 
+% Compound
+name = append(char(a(end-3)),'_',char(a(end-2)),'_',char(a(end-1)),'_average_COMP.phy');
+%name = append(char(a(1)),'_AMPAR.phy');
+ephysIO(name,[time COMP],'s','A')
 %%
 
 function [notes1] = notesimport(filename) 
