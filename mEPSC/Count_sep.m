@@ -138,7 +138,7 @@ AMPAR = ml_out.AMPAR.median;
 COMP = ml_out.Compound.median;
 % save recordings
 % save as seperate .phy (use the filename variable)
-time = 5e-5*[1:1001]';
+time = 5e-5*[1:size(AMPAR,1)]';
 
 % NMDAR
 a = split(filename,'/');
