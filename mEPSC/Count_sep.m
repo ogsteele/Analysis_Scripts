@@ -10,7 +10,7 @@ clear
 
 %% Load in w/ readtable
 % Select event counts to visualise
-title_str = "1. Select event counts";
+title_str = "1. Select eventer analysis directory (above eventer.output)";
 menu(title_str,'OK');
 clear('title_str')
 
