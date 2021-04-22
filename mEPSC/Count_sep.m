@@ -104,6 +104,7 @@ cd ../../..
     relevent = dirpath(end-5:end);
     % get the notes
     listing = dir('*notes.txt');
+    listing = listing(~startsWith({listing.name}, '.')); % remove deleted/hidden
     notes = notesimport(fullfile(listing.folder,listing.name));
     
 ml_out.Info.Genotype = relevent(1);
