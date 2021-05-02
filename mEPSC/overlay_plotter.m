@@ -33,16 +33,17 @@ else
 end
 
 % plot the AMPAR trace
-time = 5e-5*[1:1001]';
-%figure; plot(time, all.array(:,2:end),'linewidth',0.5,'color',[0.8500, 0.3250, 0.0980, 0.3]) % orange
-% figure; plot(time, all.array(:,2:end),'linewidth',0.5,'color',[0, 0.4470,0.7410, 0.3]) % blue
- figure; plot(time, all.array(:,2:end),'linewidth',0.5,'color',[0.9290,0.6940, 0.1250 0.3]) % yellow
+%time = 5e-5*[1:(size(all.array(:,1),1)-1)]';
+time = all.array(:,1);
+ figure; plot(time, all.array(:,2:end),'linewidth',0.5,'color',[0.8500, 0.3250, 0.0980, 0.1]) % orange
+% figure; plot(time, all.array(:,2:end),'linewidth',0.5,'color',[0, 0.4470,0.7410, 0.1]) % blue
+% figure; plot(time, all.array(:,2:end),'linewidth',0.5,'color',[0.9290,0.6940, 0.1250 0.1]) % yellow
 set(gca,'linewidth',3,'fontsize',14)
 set(gcf,'color','w');
 box off
 ylabel('Amplitude (A)')
 xlabel('Time (s)')
-ylim([-1e-11 0.5e-11])
+ylim([-1e-11 1e-11])
 
 %% Select average AMPAR .h5 to load and plot
 title_str = "Select average AMPAR .h5 to load and plot";
@@ -63,9 +64,9 @@ else
 end
 
 hold on
-% plot(time, average.array(:,2),'linewidth',2,'color',[0.8500, 0.3250, 0.0980, 1]) % orange
+ plot(time, average.array(:,2),'linewidth',1,'color',[0.8500, 0.3250, 0.0980, 1]) % orange
 % plot(time, average.array(:,2),'linewidth',2,'color',[0, 0.4470, 0.7410, 1]) % blue
- plot(time, average.array(:,2),'linewidth',2,'color',[0.9290, 0.6940, 0.1250, 1]) % yellow
+% plot(time, average.array(:,2),'linewidth',2,'color',[0.9290, 0.6940, 0.1250, 1]) % yellow
 set(gca,'visible','off')
 
 % save fig
