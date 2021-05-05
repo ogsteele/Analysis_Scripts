@@ -1,6 +1,6 @@
 # mEPSC Analysis
 
-[Last update:]{.ul} *05.05.21*
+Last update: *05.05.21*
 
 Collection of mEPSC analysis scripts, see below for a brief description
 
