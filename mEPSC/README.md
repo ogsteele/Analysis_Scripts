@@ -1,10 +1,18 @@
-# mEPSC Analysis
+# mEPSC Analysis 
+
+[Last update:]{.ul} *05.05.21*
 
 Collection of mEPSC analysis scripts, see below for a brief description
+
+----------------------------
 
 ## Clipper.m
 
 *Clips a portion off of the beginning of the recording and saves as .phy*
+
+## Trimmer.m
+
+*Script that merely opens up the file with ephysIO, trims if necessary, then resaves it. Definitely worth combining with Clipper, i'm just lazy ...*
 
 ## conc_all.m
 
@@ -22,10 +30,6 @@ Collection of mEPSC analysis scripts, see below for a brief description
 
 *plots neat looking overlay plots of ensemble averages and condition median*
 
-## property_extractor.m
-
-*Scans through the ml_out output and extracts the values other than synaptic, ie Input, Rm, Cap etc*
-
 ## rolling_plot.m
 
 *Gives the illusion of a rolling live plot with selectable window*
@@ -34,13 +38,19 @@ Collection of mEPSC analysis scripts, see below for a brief description
 
 *Allows the user to generate a training set for use in creating a machine learning model*
 
-## Trimmer.m
+## Rs_Comp_OGS.m
 
-*Script that merely opens up the file with ephysIO, trims if necessary, then resaves it. Definitely worth combining with Clipper, i'm just lazy ...*
+*Compensates the Rs in a recording to a set MOhm (\~10)*
+
+## motherlode.m
+
+*This will extract all data pre-stimfit and plot some of it too. Can grow and adapt to needs. Should include more whole cell properties but will grow to include this.*
+
+----------------------------
 
 # Suggested processing pathway
 
-**Data cleaning**
+**Data cleaning and compensation**
 
 1.  Raw mEPSC input as .tdms
 
@@ -48,25 +58,29 @@ Collection of mEPSC analysis scripts, see below for a brief description
 
 3.  Compensate for series resistance change across the recording with `RS_Comp.m`
 
-**Early properties (to be automated)**
+**Early properties and model training**
+
+*This should only need to actually be done for a subset of the data at the start. Once you've got a reliable model, it's fine to apply these settings (noise etc) along with the model.*
 
 1.  Generate a pearsons fit with Eventer
 
-2.  Scan through this calculate the noise levels with `noise.m`
+2.  Scan through this and calculate the noise levels with `noise.m`
 
-3.  Extract other relevent properties with `property_extractor.m`
+3.  Calculate a training set with `trainingset.m`
 
-**Model training**
+4.  Train model with eventer and extract events using this model into a new output
 
-1.  Calculate a training set with `trainingset.m`
-
-2.  Train model with eventer and extract events using this model into a new output
-
-**Process for Stimfit**
+**Process for Stimfit and `motherlode.m`**
 
 1.  Seperate the events using `count_sep.m`
 
 2.  Concatenate ensemble averages into single array for StimFit with `conc_all.m`
+
+3.  Run a threshold test to determine whether an NMDAR response is present with `threshold_test.m`
+
+    1.  Remember to name this seperately to not confuse this
+
+4.  Run `motherlode.m` across all conditions.
 
 **Stimfit**
 
