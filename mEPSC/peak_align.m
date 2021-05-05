@@ -65,3 +65,40 @@ plot(smooth((median(S.array(:,2:end-1),2))),'linewidth',2,'color',[0.9290,0.6940
 box off
 set(gcf,'color','w');
 set(gca,'visible','off')
+
+%% all
+E3M_NMDAR = ephysIO('/Volumes/T7/Experiments/NMDAR mEPSC/04_processing/Subtraction/Averages/E3M/NMDAR/E3M_NMDAR_average_all.h5');
+E3F_NMDAR = ephysIO('/Volumes/T7/Experiments/NMDAR mEPSC/04_processing/Subtraction/Averages/E3F/NMDAR/E3F_NMDAR_average_all.h5');
+E4M_NMDAR = ephysIO('/Volumes/T7/Experiments/NMDAR mEPSC/04_processing/Subtraction/Averages/E4M/NMDAR/E4M_NMDAR_average_all.h5');
+E4F_NMDAR = ephysIO('/Volumes/T7/Experiments/NMDAR mEPSC/04_processing/Subtraction/Averages/E4F/NMDAR/E4F_NMDAR_average_all.h5');
+
+
+% Load and concatenate
+
+% add time as the first and save as ensemble average
+NMDAR_aves = [E3M_NMDAR.array(:,2) E3F_NMDAR.array(:,2) E4M_NMDAR.array(:,2) E4F_NMDAR.array(:,2)];
+time = 5e-5*[1:size(NMDAR_aves,1)]';
+% create the output in the structure
+filename = 'NMDAR_ensemble_averages_all.phy';
+% save the ensemble average
+ephysIO(char(filename),[time NMDAR_aves],'s','A') 
+
+%
+S = ephysIO('NMDAR_peak_scaled_all.h5');
+array = S.array(:,2:end);
+% apply a filter to clean the look of the data
+YF = filter1(array, time, 0, 500);
+figure;
+plot(YF,'linewidth',2)
+legend('E3M','E3F','E4M','E4F')
+
+
+figure
+plot(S.array(:,2),'linewidth',0.5,'color',[0.9290,0.6940, 0.1250 0.1])
+hold on
+plot(smooth((median(S.array(:,2:end-1),2))),'linewidth',2,'color',[0.9290,0.6940, 0.1250 1])
+box off
+set(gcf,'color','w');
+set(gca,'visible','off')
+
+

@@ -201,7 +201,7 @@ box off; set(gca,'linewidth',2); set(gcf,'color','white'), legend('E3F','E3M','E
 
 
 %% Plot baseline changes between conditions
-
+% raw
 figure
 hold on
 plot((mean([E3F_subset.baseline],2))*10e11,'linewidth',2)
@@ -212,7 +212,60 @@ hold off
 xlabel('Sweep'); ylabel('Amplitude (pA)'); 
 box off; set(gca,'linewidth',2); set(gcf,'color','white'), legend('E3F','E3M','E4F','E4M')
 
-figure; 
+% binned
+
+t = 1:180;
+t = t';
+% E3M
+y = [E3M_subset.baseline];
+dat = [t y];
+[N,edges,bins] = histcounts(dat(:,1),30);
+for n = 1:30
+bin_means(:,n) = mean(dat(bins==n,:))';
+end
+E3M_binned_base = mean(bin_means(2:end,:),1);
+clear('bin_means')
+% E3F
+y = [E3F_subset.baseline];
+dat = [t y];
+[N,edges,bins] = histcounts(dat(:,1),30);
+for n = 1:30
+bin_means(:,n) = mean(dat(bins==n,:))';
+end
+E3F_binned_base = mean(bin_means(2:end,:),1);
+clear('bin_means')
+% E4M
+y = [E4M_subset.baseline];
+dat = [t y];
+[N,edges,bins] = histcounts(dat(:,1),30);
+for n = 1:30
+bin_means(:,n) = mean(dat(bins==n,:))';
+end
+E4M_binned_base = mean(bin_means(2:end,:),1);
+clear('bin_means')
+% E4F
+y = [E4F_subset.baseline];
+dat = [t y];
+[N,edges,bins] = histcounts(dat(:,1),30);
+for n = 1:30
+bin_means(:,n) = mean(dat(bins==n,:))';
+end
+E4F_binned_base = mean(bin_means(2:end,:),1);
+clear('bin_means')
+figure
+hold on
+plot(E3M_binned_base*10e11,'linewidth',2)
+plot(E3F_binned_base*10e11,'linewidth',2)
+plot(E4M_binned_base*10e11,'linewidth',2)
+plot(E4F_binned_base*10e11,'linewidth',2)
+hold off
+legend('E3M','E3F','E4M','E4F')
+box off; set(gca,'linewidth',2); set(gcf,'color','white')
+xlabel('Time (mins)')
+ylabel('Amplitude (pA)')
+
+% bar
+figure; [
 X = categorical({'E3M','E3F','E4M','E4F'});
 X = reordercats(X,{'E3M','E3F','E4M','E4F'});
 Y = [ ...
