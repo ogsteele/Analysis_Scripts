@@ -1,10 +1,10 @@
-# mEPSC Analysis 
+# mEPSC Analysis
 
-Last update: *05.05.21*
+[Last update:]{.ul} *05.05.21*
 
 Collection of mEPSC analysis scripts, see below for a brief description
 
-----------------------------
+------------------------------------------------------------------------
 
 ## Clipper.m
 
@@ -42,11 +42,13 @@ Collection of mEPSC analysis scripts, see below for a brief description
 
 *Compensates the Rs in a recording to a set MOhm (\~10)*
 
+*Located in* `Analysis_Scripts/mEPSC/Rs_Comp`
+
 ## motherlode.m
 
 *This will extract all data pre-stimfit and plot some of it too. Can grow and adapt to needs. Should include more whole cell properties but will grow to include this.*
 
-----------------------------
+------------------------------------------------------------------------
 
 # Suggested processing pathway
 
