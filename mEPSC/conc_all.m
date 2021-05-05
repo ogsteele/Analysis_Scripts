@@ -1,5 +1,8 @@
 %% Concatenate_all
+
 % simple script to concatenate all contents of directory into one
+% should only be used to concatenate ensemble averages when in a clean
+% directory (with only them)
 
 %% Clear workspace
 

@@ -1,3 +1,50 @@
+%% motherlode 
+
+% requirements:
+%    - parforprogress by Frerk Saxen (Mathworks File Exchange, 2019) & 
+%    shaded_error by Rob Campbell (Mathworks File Exchange, 2018) 
+%    (both available on mathworks, but also in the `mEPSC/third_party` 
+%    github page)
+%    - pargorprogress requires the instrument control toolbox
+%    (https://www.mathworks.com/products/instrument.html) and possibly the
+%    parralel processing toolbox
+%
+% not an interesting script, just a timesaving one. Will run through all
+% the data and pull out interesting features as desired - so far ... 
+%
+%     create ID
+%     out(i).Genotype = char(split_folder(end-5));
+%     out(i).Sex = char(split_folder(end-4));
+%     out(i).ID = split_folder(end-2);
+%     out(i).Slice = split_folder(end-1);
+%     out(i).Cell = split_folder(end);
+%     extract AMPAR values
+%     out(i).AMPA_event_num = a.ml_out.AMPAR.event_num;
+%     out(i).AMPA_Hz = a.ml_out.AMPAR.event_num/600;
+%     out(i).AMPA_Amp = a.ml_out.AMPAR.event_amp;
+%     extract Compound values
+%     out(i).Comp_event_num = a.ml_out.Compound.event_num;
+%     out(i).Comp_Hz = a.ml_out.Compound.event_num/600;
+%     out(i).Comp_Amp = a.ml_out.Compound.event_amp;
+%     extract whole cell properties
+%     out(i).raw_Rs = a.comp_output.raw_wcp.Rs(1:180);
+%     out(i).mean_raw_Rs = mean(a.comp_output.raw_wcp.Rs(1:180));
+%     out(i).comp_Rs = a.comp_output.comp_wcp.Rs(1:180);
+%     out(i).mean_comp_Rs = mean(a.comp_output.comp_wcp.Rs(1:180));
+%     extract event counts
+%     out(i).event_counts = NaN(180,1);
+%     out(i).cumsum_event_counts = cumsum(out(i).event_counts);
+%     extract baseline data
+%     out(i).baseline = a(1:180,2);
+%     out(i).early_base = mean(out(i).baseline(1:60));
+%     out(i).late_base = mean(out(i).baseline(121:180));
+%     
+%     motherlode will save the above into an output structure, whilst also subsetting the data and saving to the workspace only currently. 
+%     motherlode will produce several plots of the data also.
+%   
+%     TODO:
+%            include more wcp (ie, all of them) 
+%            include more actual recording data
 %% Tidy up 
 
 clear
@@ -160,33 +207,6 @@ ylabel('Frequency (Hz)');
 box off; set(gca,'linewidth',2); set(gcf,'color','white'), legend('Compound','AMPA')
 
 
-% err = [ ...
-%     E3M
-%     std([E3M_subset.Comp_Hz]) std([E3M_subset.AMPA_Hz]); ...
-%     E3F
-%     std([E3F_subset.Comp_Hz]) std([E3F_subset.AMPA_Hz]); ...
-%     E4M
-%     std([E4M_subset.Comp_Hz]) std([E4M_subset.AMPA_Hz]); ...
-%     E4F
-%     std([E4F_subset.Comp_Hz]) std([E4F_subset.AMPA_Hz]) ...
-%     ];
-% 
-% Grouped error plots
-% model_series = Y; 
-% model_error = err; 
-% b = bar(model_series, 'grouped');
-% hold on
-% Calculate the number of groups and number of bars in each group
-% [ngroups,nbars] = size(model_series);
-% Get the x coordinate of the bars
-% x = nan(nbars, ngroups);
-% for i = 1:nbars
-%     x(i,:) = b(i).XEndPoints;
-% end
-% Plot the errorbars
-% errorbar(x',model_series,model_error,'k','linestyle','none');
-% hold off
-
 %% Plot cumsum between conditions
 figure
 hold on
@@ -201,6 +221,7 @@ box off; set(gca,'linewidth',2); set(gcf,'color','white'), legend('E3F','E3M','E
 
 
 %% Plot baseline changes between conditions
+
 % raw
 figure
 hold on
@@ -265,7 +286,7 @@ xlabel('Time (mins)')
 ylabel('Amplitude (pA)')
 
 % bar
-figure; [
+figure;
 X = categorical({'E3M','E3F','E4M','E4F'});
 X = reordercats(X,{'E3M','E3F','E4M','E4F'});
 Y = [ ...

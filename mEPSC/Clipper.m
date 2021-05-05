@@ -1,3 +1,5 @@
+%% Clipper
+
 % Clipper clips the beginning, trimmer trims the end ... don't ask
 % combine at a later date
 %% How much do you want to trim?

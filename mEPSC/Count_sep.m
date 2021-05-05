@@ -1,8 +1,9 @@
 %% Count_sep
+
 % script to count the events, and then seperate dependant on region.
 % this provides you with Compund and AMPAR events & medians
 
-% will also save NMDAR and AMPAR median .phy recordings
+% will also save compound, AMPAR and NMDAR seperated sections as `ml_out`
 
 % clear workspace to begin
 close all
@@ -133,7 +134,7 @@ end
 save('ml_out.mat','ml_out')
 
 
-%% Do the job event_sep
+%% Do the job of legacy script `event_sep`
 NMDAR = ml_out.Compound.median - ml_out.AMPAR.median;
 AMPAR = ml_out.AMPAR.median;
 COMP = ml_out.Compound.median;

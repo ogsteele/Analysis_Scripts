@@ -1,6 +1,4 @@
 %% Trimmer
-% Author: O.G.Steele
-% Data: 22.12.20
 
 % Simple script to use ephysIO to load a file, trim it if necessary, then
 % use ephysIO to save the file again and select the point at which to end
