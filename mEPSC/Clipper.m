@@ -2,13 +2,17 @@
 
 % Clipper clips the beginning, trimmer trims the end ... don't ask
 % combine at a later date
+
+%% Presets
+sampling_Hz = 20000; % sampling frequency in Hz
+
 %% How much do you want to trim?
 % ask how much to trim
 prompt = {'Amount of data to trim at the start (s)'};
 dlgtitle = 'Input';
 dims = [1 50];
-answer = inputdlg(prompt,dlgtitle,dims);
-answer = str2double(answer); % convert to number
+time_s = inputdlg(prompt,dlgtitle,dims);
+time_s = str2double(time_s); % convert to number
 
 %% Load in w/ ePhysIO
 % Select raw trace to visualise
@@ -39,7 +43,7 @@ figure; plot(S.array(:,2)), title('raw trace')
 a = split(filename,'.');
 new_filename = append(char(a(1)),'.phy');
 % save new file
-ephysIO(new_filename,S.array(answer*20000:end,:),S.xunit,S.yunit,S.names,S.notes,'int16')
+ephysIO(new_filename,S.array(time_s*sampling_Hz:end,:),S.xunit,S.yunit,S.names,S.notes,'int16')
 % plot the new one
 S = ephysIO(new_filename);
 figure; plot(S.array(:,2)); title('trimmed trace')
