@@ -72,7 +72,17 @@ end
 % tidy workspace
 clear('path','ans')
 
+%% What gain level was the recording performed at
+% ask how much to trim
+prompt = {'Gain value of the raw recording'};
+dlgtitle = 'Input Gain setting';
+dims = [1 50];
+def = {'100'}; % default gain value in my case is 100
+gain = inputdlg(prompt,dlgtitle,dims,def);
+gain = str2double(gain); % convert to number
 
+% overwrite the gain value set in parameters
+Param.amplifier_gain = gain;
 %% Split the data into ten second waves
 
 % convert the data in pA
@@ -108,7 +118,9 @@ clear('start','finish','i','s','length_seconds','length_raw','length_raw_split',
 
 % get the start time of the test pulse
 figure; plot(splits(:,1))
+pause
 title_str = "2. Zoom into the test pulse BEFORE clicking enter to select a single start point";
+disp("2. Zoom into the test pulse BEFORE clicking enter to select a single start point")
 if ~ispc; menu(title_str,'OK'); end
 clear('title_str')
 [x,y] = ginput(1);
