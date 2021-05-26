@@ -68,10 +68,10 @@ toc
 numIterations  = size(d,1);
 ppm = ParforProgressbar(numIterations,...
     'title','ml out.mat extraction');
-parfor i = 1:size(d,1)
+parfor i = 1:numIterations
     a = load(fullfile(d(i).folder,d(i).name));
     % create ID
-    split_folder = split(d(i).folder,'/');
+    split_folder = split(d(i).folder,'\');
     out(i).Genotype = char(split_folder(end-5));
     out(i).Sex = char(split_folder(end-4));
     out(i).ID = split_folder(end-2);
@@ -110,6 +110,9 @@ parfor i = 1:size(d,1)
     out(i).mean_raw_Rs = mean(a.comp_output.raw_wcp.Rs(1:180));
     out(i).comp_Rs = a.comp_output.comp_wcp.Rs(1:180);
     out(i).mean_comp_Rs = mean(a.comp_output.comp_wcp.Rs(1:180));
+    out(i).mean_raw_Cm = mean(a.comp_output.raw_wcp.Cm);
+    out(i).mean_raw_Rm = mean(a.comp_output.raw_wcp.Rm);
+    out(i).mean_raw_Q = mean(a.comp_output.raw_wcp.Q);
     ppm.increment();   
 end
 delete(ppm); clear ppm;
@@ -237,15 +240,6 @@ box off; set(gca,'linewidth',2); set(gcf,'color','white'), legend('E3F','E3M','E
 
 t = 1:180;
 t = t';
-% E3M
-y = [E3M_subset.baseline];
-dat = [t y];
-[N,edges,bins] = histcounts(dat(:,1),30);
-for n = 1:30
-bin_means(:,n) = mean(dat(bins==n,:))';
-end
-E3M_binned_base = mean(bin_means(2:end,:),1);
-clear('bin_means')
 % E3F
 y = [E3F_subset.baseline];
 dat = [t y];
@@ -255,14 +249,14 @@ bin_means(:,n) = mean(dat(bins==n,:))';
 end
 E3F_binned_base = mean(bin_means(2:end,:),1);
 clear('bin_means')
-% E4M
-y = [E4M_subset.baseline];
+% E3M
+y = [E3M_subset.baseline];
 dat = [t y];
 [N,edges,bins] = histcounts(dat(:,1),30);
 for n = 1:30
 bin_means(:,n) = mean(dat(bins==n,:))';
 end
-E4M_binned_base = mean(bin_means(2:end,:),1);
+E3M_binned_base = mean(bin_means(2:end,:),1);
 clear('bin_means')
 % E4F
 y = [E4F_subset.baseline];
@@ -273,6 +267,15 @@ bin_means(:,n) = mean(dat(bins==n,:))';
 end
 E4F_binned_base = mean(bin_means(2:end,:),1);
 clear('bin_means')
+% E4M
+y = [E4M_subset.baseline];
+dat = [t y];
+[N,edges,bins] = histcounts(dat(:,1),30);
+for n = 1:30
+bin_means(:,n) = mean(dat(bins==n,:))';
+end
+E4M_binned_base = mean(bin_means(2:end,:),1);
+clear('bin_means')
 figure
 hold on
 plot(E3M_binned_base*10e11,'linewidth',2)
@@ -280,7 +283,7 @@ plot(E3F_binned_base*10e11,'linewidth',2)
 plot(E4M_binned_base*10e11,'linewidth',2)
 plot(E4F_binned_base*10e11,'linewidth',2)
 hold off
-legend('E3M','E3F','E4M','E4F')
+legend('E3F','E3M','E4F','E4M')
 box off; set(gca,'linewidth',2); set(gcf,'color','white')
 xlabel('Time (mins)')
 ylabel('Amplitude (pA)')

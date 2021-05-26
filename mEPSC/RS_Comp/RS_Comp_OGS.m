@@ -118,6 +118,7 @@ clear('start','finish','i','s','length_seconds','length_raw','length_raw_split',
 
 % get the start time of the test pulse
 figure; plot(splits(:,1))
+title("2. Zoom into the test pulse BEFORE clicking enter to select a single start point")
 pause
 title_str = "2. Zoom into the test pulse BEFORE clicking enter to select a single start point";
 disp("2. Zoom into the test pulse BEFORE clicking enter to select a single start point")
