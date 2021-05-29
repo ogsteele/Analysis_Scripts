@@ -4,7 +4,8 @@
 % combine at a later date
 
 %% Presets
-sampling_Hz = 20000; % sampling frequency in Hz
+sampling_Hz = 20000; % sampling frequency in Hz (mEPSC for Oli)
+%sampling_Hz = 25000; % sampling frequency in Hz (mEPSP for Andy)
 
 %% How much do you want to trim?
 % ask how much to trim
