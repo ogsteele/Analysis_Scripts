@@ -14,6 +14,9 @@
 %% Get amplifier parameters
 % Read in amplifier settings from notes.txt
 
+% split length in seconds
+split_length = 10;
+
 %% Time points
 % ask the user the time points of the experiment
 prompt = {...
@@ -26,16 +29,19 @@ dlgtitle = 'Time points in recording';
 dims = [1 50];
 answer = inputdlg(prompt,dlgtitle,dims,defaults);
 answer = str2double(answer); % convert to number
+
 % if 'answer' is empty, terminate script
 if isempty(answer)
     disp('User cancelled on time point entry')
     return;
 else
-    Start_s = answer(1);
-    Drug_s = answer(2);
-    End_s = answer(3);
+    Start_s = answer(1); % seconds
+    Start_w = Start_s / split_length; % wave
+    Drug_s = answer(2); % seconds
+    Drug_w = Drug_s / split_length; % wave
+    End_s = answer(3); % seconds
+    End_w = End_s / split_length; % wave
 end
-
 
 %% Plot cumulative sum of events
 % Select event counts to visualise
@@ -68,7 +74,7 @@ ylabel('Event number')
 % display summary counts
 disp(['Total number of waves = ', num2str(waves)])
 disp(['Total number of events = ', num2str(sum(counts))])
-disp(['Total average of frequency = ', num2str(sum(counts)/(waves*10))])
+disp(['Total average of frequency = ', num2str(sum(counts)/(waves*split_length))])
 
 
 %% Load in w/ ePhysIO
@@ -82,7 +88,28 @@ S = ephysIO(fullfile(filepath,'eventer.output/All_events/event_data.phy'));
 
 % Comp_events = S.array(:,2:comp_event_num);
 % Comp_median = median(Comp_events,2);
-% 
+
+% Define points of interest
+% S.array(:,1) = time
+Compound_events = S.array(:,Start_w+2:Drug_w+2);
+AMPAR_events = S.array(:,Drug_w+2:End_w);
+
+figure
+hold on
+plot(median(Compound_events,2))
+plot(median(AMPAR_events,2))
+legend('Comp','AMPAR')
+plot((median(Compound_events,2))-(median(AMPAR_events,2)))
+legend('Baseline','+ L-689,560','Difference')
+title('Event overlays')
+ylabel('Amplitude (pA)')
+xlabel('Data points')
+box off
+set(gcf,'color','white')
+set(gca,'linewidth',2)
+hold off
+
+
 % if AMPAR_start < Comp_end
 %     disp('No AMPAR isolated events detected')
 %     figure
