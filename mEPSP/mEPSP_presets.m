@@ -1,6 +1,6 @@
 app.TimeConstantsEditField1.Value = 5.65;
 app.TimeConstantsEditField2.Value = 39.6;
-app.ConfigurationDropDown.Value = 'VC';
+app.ConfigurationDropDown.Value = 'CC';
 app.SignoftheEventsSwitch.Value = '+';
 app.ThresholdSpinner.Value = 4;
 app.CriterionDropDown.Value = 'Pearson';
@@ -17,7 +17,7 @@ app.HighpassFilterCutOffSpinner.Value = 20;
 app.LowpassFilterCutOffSpinner.Value = 100;
 app.MedianButton.Value = 1;
 app.MinWindowSpinner.Value = -0.01;
-app.MaxWindowSpinner.Value = 0.2;
+app.MaxWindowSpinner.Value = 0.25;
 app.WaveFormatDropDown.Value = 'phy';
 app.GNUZipCompressionCheckBox.Value = 0;
 app.FigureFormatDropDown.Value = 'fig';

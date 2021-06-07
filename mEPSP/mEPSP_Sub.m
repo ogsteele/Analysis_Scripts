@@ -102,7 +102,7 @@ legend('Comp','AMPAR')
 plot((median(Compound_events,2))-(median(AMPAR_events,2)))
 legend('Baseline','+ L-689,560','Difference')
 title('Event overlays')
-ylabel('Amplitude (pA)')
+ylabel('Amplitude (V)')
 xlabel('Data points')
 box off
 set(gcf,'color','white')
