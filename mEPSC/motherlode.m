@@ -38,12 +38,14 @@
 %     out(i).baseline = a(1:180,2);
 %     out(i).early_base = mean(out(i).baseline(1:60));
 %     out(i).late_base = mean(out(i).baseline(121:180));
+%     extract noise levels
+%     
 %     
 %     motherlode will save the above into an output structure, whilst also subsetting the data and saving to the workspace only currently. 
-%     motherlode will produce several plots of the data also.
+%     motherlode will produce several plots of the data also, saved into
+%     figures
 %   
 %     TODO:
-%            include more wcp (ie, all of them) 
 %            include more actual recording data
 %% Tidy up 
 
@@ -169,6 +171,29 @@ for i = 1:size(d,1)
 end
 delete(ppm); clear ppm;
 
+% %% Noise levels
+% disp(['Parsing summary.txt files ...'])
+% tic
+% d = dir('**/mlm_500_new/eventer.output/ALL_events/summary.txt'); % dir list of summary.txt files
+% d = d(~startsWith({d.name}, '.')); % remove deleted/hidden
+% toc
+% 
+% numIterations  = size(d,1);
+% ppm = ParforProgressbar(numIterations,...
+%     'title','event_counts.txt extraction');
+% for i = 1:size(d,1)
+%     a = table2array(readtable(fullfile(d(i).folder,d(i).name)));
+%     out(i).event_counts = NaN(180,1);
+%     if size(a,1) >= 180
+%         out(i).event_counts = a(1:180);
+%     else 
+%         out(i).event_counts(1:size(a,1)) = a;
+%     end
+%     out(i).cumsum_event_counts = cumsum(out(i).event_counts);
+%     ppm.increment(); 
+% end
+% delete(ppm); clear ppm;
+
 %% Splitting for later convenience
 
 E4_subset = out(strcmp({out.Genotype}, 'APOE4'));
@@ -182,14 +207,17 @@ E4F_subset = out(strcmp({out.Genotype}, 'APOE4') & strcmp({out.Sex}, 'Female'));
 
 E3M_subset = out(strcmp({out.Genotype}, 'APOE3') & strcmp({out.Sex}, 'Male'));
 E3F_subset = out(strcmp({out.Genotype}, 'APOE3') & strcmp({out.Sex}, 'Female'));
-%% Plotting
 
+
+%% Plotting
+disp('Generating and autosaving plots ...')
     %% plot Rs values across all conditions
 x = linspace(0,180,180);
 figure; shadedErrorBar(x,mean([out.raw_Rs],2),std([out.raw_Rs],[],2),'lineprops','r'); 
 hold on; shadedErrorBar(x,mean([out.comp_Rs],2),std([out.comp_Rs],[],2),'lineprops','b');
 xlabel('sweep'); ylabel('Rs (MOhm)'); 
 box off; set(gca,'linewidth',2); set(gcf,'color','white'), legend('raw','comp')
+saveas(gcf,'figures/raw vs comp Rs.pdf')
 
     %% plot event frequency between condition
     figure; 
@@ -208,7 +236,7 @@ Y = [ ...
 bar(X,Y)
 ylabel('Frequency (Hz)'); 
 box off; set(gca,'linewidth',2); set(gcf,'color','white'), legend('Compound','AMPA')
-
+saveas(gcf,'figures/freqeuncy vs condition.pdf')
 
 %% Plot cumsum between conditions
 figure
@@ -221,7 +249,7 @@ hold off
 
 ylabel('Cumulative event count'); 
 box off; set(gca,'linewidth',2); set(gcf,'color','white'), legend('E3F','E3M','E4F','E4M')
-
+saveas(gcf,'figures/cumsum vs condition.pdf')
 
 %% Plot baseline changes between conditions
 
@@ -235,7 +263,7 @@ plot((mean([E4M_subset.baseline],2))*10e11,'linewidth',2)
 hold off
 xlabel('Sweep'); ylabel('Amplitude (pA)'); 
 box off; set(gca,'linewidth',2); set(gcf,'color','white'), legend('E3F','E3M','E4F','E4M')
-
+saveas(gcf,'figures/holding current raw.pdf')
 % binned
 
 t = 1:180;
@@ -287,6 +315,7 @@ legend('E3F','E3M','E4F','E4M')
 box off; set(gca,'linewidth',2); set(gcf,'color','white')
 xlabel('Time (mins)')
 ylabel('Amplitude (pA)')
+saveas(gcf,'figures/holding current binned.pdf')
 
 % bar
 figure;
@@ -336,3 +365,142 @@ hold off
 ylabel('Amplitude (pA)'); 
 box off; set(gca,'linewidth',2); set(gcf,'color','white'), legend('Early Baseline','Late Baseline');
 xticklabels({'E3m','E3F','E4M','E4F'})
+saveas(gcf,'figures/holding current bars.pdf')
+
+%% WCP
+% Plot Rm x Cm 
+figure
+Cm = [out.mean_raw_Cm];
+Rm = [out.mean_raw_Rm];
+scatter(Cm,Rm)
+xlabel('Cm')
+ylabel('Rm')
+saveas(gcf,'figures/capacitance vs resistance.pdf')
+
+Hz = [out.Comp_Hz];
+figure; scatter3(Cm,Rm,Hz);
+xlabel('Cm')
+ylabel('Rm')
+zlabel('Hz')
+saveas(gcf,'figures/frequency vs capacitance vs resistance.pdf')
+
+% plot Cm vs condition
+figure;
+X = categorical({'E3M','E3F','E4M','E4F'});
+X = reordercats(X,{'E3M','E3F','E4M','E4F'});
+val = [mean([E3M_subset.mean_raw_Cm]) mean([E3F_subset.mean_raw_Cm]) mean([E4M_subset.mean_raw_Cm]) mean([E4F_subset.mean_raw_Cm])];
+err = [std([E3M_subset.mean_raw_Cm])/sqrt(length([E3M_subset.mean_raw_Cm])),...
+    std([E3F_subset.mean_raw_Cm])/sqrt(length([E3F_subset.mean_raw_Cm])),...
+    std([E4M_subset.mean_raw_Cm])/sqrt(length([E4M_subset.mean_raw_Cm])),...
+    std([E4F_subset.mean_raw_Cm])/sqrt(length([E4F_subset.mean_raw_Cm]))];
+bar(X,val)
+hold on
+errorbar(X,val,err,'k','linestyle','none')
+xlabel('Condition')
+ylabel('Cm (pF)')
+yarray = NaN(length([E4M_subset.mean_raw_Cm]),4);
+yarray(1:length([E3M_subset.mean_raw_Cm]),1) = [E3M_subset.mean_raw_Cm];
+yarray(1:length([E3F_subset.mean_raw_Cm]),2) = [E3F_subset.mean_raw_Cm];
+yarray(1:length([E4M_subset.mean_raw_Cm]),3) = [E4M_subset.mean_raw_Cm];
+yarray(1:length([E4F_subset.mean_raw_Cm]),4) = [E4F_subset.mean_raw_Cm];
+[r, c] = size(yarray);
+xdata = repmat(1:c, r, 1);
+hold on
+scatter(xdata(:), yarray(:), 'r.', 'jitter','on', 'jitterAmount', 0.05);
+saveas(gcf,'figures/capacitance vs condition.pdf')
+
+% plot Rm vs condition
+figure;
+X = categorical({'E3M','E3F','E4M','E4F'});
+X = reordercats(X,{'E3M','E3F','E4M','E4F'});
+val = [mean([E3M_subset.mean_raw_Rm]) mean([E3F_subset.mean_raw_Rm]) mean([E4M_subset.mean_raw_Rm]) mean([E4F_subset.mean_raw_Rm])];
+err = [std([E3M_subset.mean_raw_Rm])/sqrt(length([E3M_subset.mean_raw_Rm])),...
+    std([E3F_subset.mean_raw_Rm])/sqrt(length([E3F_subset.mean_raw_Rm])),...
+    std([E4M_subset.mean_raw_Rm])/sqrt(length([E4M_subset.mean_raw_Rm])),...
+    std([E4F_subset.mean_raw_Rm])/sqrt(length([E4F_subset.mean_raw_Rm]))];
+bar(X,val)
+hold on
+errorbar(X,val,err,'k','linestyle','none')
+xlabel('Condition')
+ylabel('Rm (mOhm)')
+yarray = NaN(length([E4M_subset.mean_raw_Rm]),4);
+yarray(1:length([E3M_subset.mean_raw_Rm]),1) = [E3M_subset.mean_raw_Rm];
+yarray(1:length([E3F_subset.mean_raw_Rm]),2) = [E3F_subset.mean_raw_Rm];
+yarray(1:length([E4M_subset.mean_raw_Rm]),3) = [E4M_subset.mean_raw_Rm];
+yarray(1:length([E4F_subset.mean_raw_Rm]),4) = [E4F_subset.mean_raw_Rm];
+[r, c] = size(yarray);
+xdata = repmat(1:c, r, 1);
+hold on
+scatter(xdata(:), yarray(:), 'r.', 'jitter','on', 'jitterAmount', 0.05);
+saveas(gcf,'figures/capacitance vs condition.pdf')
+
+% plot Q vs condition
+figure;
+X = categorical({'E3M','E3F','E4M','E4F'});
+X = reordercats(X,{'E3M','E3F','E4M','E4F'});
+val = [mean([E3M_subset.mean_raw_Q]) mean([E3F_subset.mean_raw_Q]) mean([E4M_subset.mean_raw_Q]) mean([E4F_subset.mean_raw_Q])];
+err = [std([E3M_subset.mean_raw_Q])/sqrt(length([E3M_subset.mean_raw_Q])),...
+    std([E3F_subset.mean_raw_Q])/sqrt(length([E3F_subset.mean_raw_Q])),...
+    std([E4M_subset.mean_raw_Q])/sqrt(length([E4M_subset.mean_raw_Q])),...
+    std([E4F_subset.mean_raw_Q])/sqrt(length([E4F_subset.mean_raw_Q]))];
+bar(X,val)
+hold on
+errorbar(X,val,err,'k','linestyle','none')
+xlabel('Condition')
+ylabel('Q')
+yarray = NaN(length([E4M_subset.mean_raw_Q]),4);
+yarray(1:length([E3M_subset.mean_raw_Q]),1) = [E3M_subset.mean_raw_Q];
+yarray(1:length([E3F_subset.mean_raw_Q]),2) = [E3F_subset.mean_raw_Q];
+yarray(1:length([E4M_subset.mean_raw_Q]),3) = [E4M_subset.mean_raw_Q];
+yarray(1:length([E4F_subset.mean_raw_Q]),4) = [E4F_subset.mean_raw_Q];
+[r, c] = size(yarray);
+xdata = repmat(1:c, r, 1);
+hold on
+scatter(xdata(:), yarray(:), 'r.', 'jitter','on', 'jitterAmount', 0.05);
+saveas(gcf,'figures/charge vs condition.pdf')
+
+
+%% Define Functions
+
+function [wave_num, sd_noise, sd_thresh, summary] = pullnoise(filepath)
+% simple function to pull the wave number, noise level and adjusted
+% threshold from the summary.txt files generated by Eventer
+
+% Output Arguments
+%   wave_num: wave number to associate noise level with
+%   sd_noise: sd of the noise (a.u.)
+%   sd_thresh: scaled threshold sd
+
+% Input Arguments:
+%   filepath: character string of the fullfile where the summary.txt is
+%             located
+
+% ------------------------------------------------------------------- % 
+    % Setup the Import Options
+    opts = delimitedTextImportOptions("NumVariables", 2);
+
+    % Specify range and delimiter
+    opts.DataLines = [2, Inf];
+    opts.Delimiter = ":";
+
+    % Specify column names and types
+    opts.VariableNames = ["Variable", "Data"];
+    opts.VariableTypes = ["string", "double"];
+    opts = setvaropts(opts, 1, "WhitespaceRule", "preserve");
+    opts = setvaropts(opts, 1, "EmptyFieldRule", "auto");
+    opts.ExtraColumnsRule = "ignore";
+    opts.EmptyLineRule = "read";
+
+    % Import the data
+    summary = readtable(filepath, opts);
+    summary = table(summary.Data,'RowNames',summary.Variable);
+    
+    % Extract the variables of interest
+    wave_num = table2array(summary({'Wave number'},:)); % wave number to associate noise level with
+    sd_noise = table2array(summary({'Standard deviation of the noise of the deconvoluted wave (a.u.)'},:)); % scaled threshold sd
+    sd_thresh = table2array(summary({'Scale factor of noise standard deviations for threshold setting'},:)); % scaled threshold sd
+    %wave_num = summary.Data(2); % wave number to associate noise level with
+    %sd_noise = summary.Data(11); % sd of the noise (a.u.)
+    %sd_thresh = summary.Data(12); % scaled threshold sd
+    
+end
