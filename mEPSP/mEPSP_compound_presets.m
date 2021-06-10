@@ -1,5 +1,5 @@
-app.TimeConstantsEditField1.Value = 5.65;
-app.TimeConstantsEditField2.Value = 39.6;
+app.TimeConstantsEditField1.Value = 2.17;
+app.TimeConstantsEditField2.Value = 35.6;
 app.ConfigurationDropDown.Value = 'CC';
 app.SignoftheEventsSwitch.Value = '+';
 app.ThresholdSpinner.Value = 4;
@@ -10,7 +10,7 @@ app.HighpassPreFilterCutOffSpinner.Value = 0.5;
 app.LowpassPreFilterCutOffSpinner.Value = 1000;
 app.ExtraExclusions.Value = {'[0 0]'};
 app.NoofTausSpinner.Value = 1;
-app.BaselineTimeSpinner.Value = 3;
+app.BaselineTimeSpinner.Value = 2.5;
 app.ExmodeDropDown.Value = '1';
 app.LambdaDisp.Value = 1;
 app.HighpassFilterCutOffSpinner.Value = 20;
