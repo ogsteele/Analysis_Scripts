@@ -71,3 +71,9 @@ end
 % plot peak scaled traces
 figure; plot(scaled_traces(:,1),scaled_traces(:,2:end)); box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Voltage (V)'); title('Peak Scaled traces')
+
+%% Save outputs
+% figure
+saveas(gcf,'peakscaled.pdf')
+% data
+ephysIO('peakscaled.phy',scaled_traces,'S','A')
