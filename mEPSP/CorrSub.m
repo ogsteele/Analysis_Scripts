@@ -1,7 +1,7 @@
 %% Correction Subtraction
 % ensure in the cell (folder) of interest
 comp = ephysIO('pearsons_compound/eventer.output/ALL_events/ensemble_average.phy')
-ampa = ephysIO('pearsons_ampar/eventer.output/ALL_events/ensemble_average.phy')
+ampa = ephysIO('pearsons_ampar_thresh/eventer.output/ALL_events/ensemble_average.phy')
 
 d = dir('**/*_baseline.txt'); % dir list of baseline files
 d = d(~startsWith({d.name}, '.')); % remove deleted/hidden
@@ -21,7 +21,7 @@ ephysIO('corr_ens_ave_NMDA.phy',[t,C],'S','V')
 figure; plot(t,B); hold on; plot(t,A); plot(t,C); legend('Comp','AMPA','NMDA');
 xlabel('Time (s)'); ylabel('Membrane potential (mV)'); title('Difference trace');
 box off; set(gca,'linewidth',2); set(gcf,'color','white');
-saveas(gcf,'corrected_subtraction.pdf')
+saveas(gcf,'corrected_subtraction_thresh.pdf')
 
 % Original from Teams Conversation
 % t = before.array(:,1);
