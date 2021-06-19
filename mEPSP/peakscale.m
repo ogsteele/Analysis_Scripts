@@ -17,6 +17,14 @@ function scaled_traces = peakscale(array)
 % S = ephysIO('conc_test.phy');
 % array = S.array;
 % scaled_traces = peakscale(array);
+%% plot raw
+%% plot raw and save too
+figure; plot(array(:,1),array(:,2:end));
+title('Raw Traces'); xlabel('Time (s)'); ylabel('Voltage (V)')
+box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+legend('Compound','AMPAR','NMDAR')
+saveas(gcf,'raw.pdf')
+saveas(gcf,'raw.emf')
 
 %% measure baseline
 % plot traces overlayed
@@ -32,7 +40,6 @@ mean_baseline = zeros(1,(size(array,2)-1));
 for i = 2:size(array,2)
     mean_baseline(i-1) = mean(array(round_b(1):round_b(2),i));
 end
-
 %% subtract baselines
 for i = 2:size(array,2)
     array(:,i) = (array(:,i) - mean_baseline(i-1));
@@ -71,9 +78,11 @@ end
 % plot peak scaled traces
 figure; plot(scaled_traces(:,1),scaled_traces(:,2:end)); box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Voltage (V)'); title('Peak Scaled traces')
-
+legend('Compound','AMPAR','NMDAR')
+saveas(gcf,'peakscaled.pdf')
+saveas(gcf,'peakscaled.emf')
 %% Save outputs
 % figure
-saveas(gcf,'peakscaled.pdf')
+%saveas(gcf,'peakscaled.mfig')
 % data
 ephysIO('peakscaled.phy',scaled_traces,'S','A')
