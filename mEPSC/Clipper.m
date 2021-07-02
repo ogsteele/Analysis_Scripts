@@ -42,7 +42,7 @@ figure; plot(S.array(:,2)), title('raw trace')
 
 % trim late 
 a = split(filename,'.');
-new_filename = append(char(a(1)),'.phy');
+new_filename = append(char(a(1)),'_clpd.phy');
 % save new file
 ephysIO(new_filename,S.array(time_s*sampling_Hz:end,:),S.xunit,S.yunit,S.names,S.notes,'int16')
 % plot the new one

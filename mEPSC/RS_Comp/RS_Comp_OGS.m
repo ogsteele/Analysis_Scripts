@@ -338,14 +338,16 @@ if plots == true
     file_raw = append(char(a(1)),'_rscomp.pdf');
     saveas(gcf,file_raw)
     
-    clear plots ax1 ax2 ax3 ax4 ax5 ax6 ax7 median_YF i x fraction ans file
+    YF = [x' YF];
+    figure; plot(YF(:,1), YF(:,2)); xlabel('time (s)'); ylabel('amp (pA)'); saveas(gcf,'tprm.fig');
+
+    clear plots ax1 ax2 ax3 ax4 ax5 ax6 ax7 YF median_YF i x fraction ans file
     clear wcp_raw wcp_corr_penn
     clear S Param corr_p_splits x2 splits file_raw a
 else
     disp("Plots disabled (to enable set plots = true)")
     clear('plots')
 end
-
 
 %% Define Functions
 

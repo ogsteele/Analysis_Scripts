@@ -94,6 +94,17 @@ S = ephysIO(fullfile(filepath,'eventer.output/All_events/event_data.phy'));
 Compound_events = S.array(:,Start_w+2:Drug_w+2);
 AMPAR_events = S.array(:,Drug_w+2:End_w);
 
+comp = median(
+ampa
+
+baseline = table2array(readtable(d.name));
+t = comp.array(:,1);
+b = median(baseline(10:80,2)); % 'b' is the average baseline before L689560
+a = median(baseline(end-70:end,2)); % 'a' is the average baseline after L689560
+A = (a + ampa.array(:,2)) * b/a; % corrected AMPAR
+B = b + comp.array(:,2); % corrected compound
+C = (b + (B-A)); % corrected NMNDAR
+
 figure
 hold on
 plot(median(Compound_events,2))
