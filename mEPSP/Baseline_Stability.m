@@ -35,17 +35,15 @@ disp(['Total number of waves = ', num2str(waves)])
 disp(['Total number of events = ', num2str(n_events)])
 disp(['Total average of frequency (Hz) = ', num2str(n_events/(waves*split_length))])
 
-% bin events, average and amplitude them
-% (this will need streamlining as it's a stupid value for now)
-% (this is bad code, fix later)
+% bin events per minute, average and amplitude them
 event_data_notime = event_data.array(:,2:end);
-bins = 5:5:205;
+bins = 6:6:waves;
 bins_1 = [1 bins];
 for i = 1:size(bins,2)
     median_binned_events(:,i) = median(event_data_notime(:,bins_1(i):(cum_event_counts(bins(i)))),2);
     amp_binned_events(i) = max(median_binned_events(:,i));
 end
 
-% plot event amplitudes over time
-figure; plot(bins,amp_binned_events*10^3); ylim([0,1]); xlabel('wave'); ylabel('amplitude (mV)');
+% plot event amplitudes over wave number
+figure; plot(bins/6,amp_binned_events*10^3); ylim([0,1]); xlabel('Time (minutes)'); ylabel('Amplitude (mV)');
 
