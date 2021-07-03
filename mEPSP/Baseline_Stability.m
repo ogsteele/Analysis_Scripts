@@ -6,6 +6,11 @@
 % Description: A script used to take all of the events over a course of a
 % recording and plot the average amplitude per wave
 
+% To do: 
+%   1. add in Vm compensation
+%   2. save outputs
+%   3. plot error bars and individual points
+
 %% Load in event_data and baseline values
 
 % load in event_data.phy with ephysIO
@@ -45,5 +50,5 @@ for i = 1:size(bins,2)
 end
 
 % plot event amplitudes over wave number
-figure; plot(bins/6,amp_binned_events*10^3); ylim([0,1]); xlabel('Time (minutes)'); ylabel('Amplitude (mV)');
+figure; plot(bins/6,amp_binned_events*10^3); ylim([0,0.5]); xlabel('Time (minutes)'); ylabel('Amplitude (mV)');
 
