@@ -8,10 +8,11 @@
 
 % To do: 
 %   1. add in Vm compensation
-%   2. save outputs
-%   3. plot error bars and individual points
 
 %% Load in event_data and baseline values
+
+% clean environment
+clear; close all
 
 % load in event_data.phy with ephysIO
 disp('Select event_data.phy')
@@ -44,11 +45,23 @@ disp(['Total average of frequency (Hz) = ', num2str(n_events/(waves*split_length
 event_data_notime = event_data.array(:,2:end);
 bins = 6:6:waves;
 bins_1 = [1 bins];
+event_amps = max(event_data_notime(:,:));
 for i = 1:size(bins,2)
     median_binned_events(:,i) = median(event_data_notime(:,bins_1(i):(cum_event_counts(bins(i)))),2);
-    amp_binned_events(i) = max(median_binned_events(:,i));
+    %mean_binned_events(:,i) = mean(event_data_notime(:,bins_1(i):(cum_event_counts(bins(i)))),2);
+    amp_median_binned_events(i) = max(median_binned_events(:,i));
+    %amp_mean_binned_events(i) = max(mean_binned_events(:,i));
+    amp_stderror(i) = std( event_amps(:,bins_1(i):(cum_event_counts(bins(i)))) ) / sqrt( length( event_amps(:,bins_1(i):(cum_event_counts(bins(i)))) ))*10^3;
+    binned_baseline(i) = median(baseline(bins_1(i):bins(i),2));
+    base_stderror(i) = std( baseline(bins_1(i):bins(i),2) / sqrt( length ( baseline(bins_1(i):bins(i),2))));   
 end
 
-% plot event amplitudes over wave number
-figure; plot(bins/6,amp_binned_events*10^3); ylim([0,0.5]); xlabel('Time (minutes)'); ylabel('Amplitude (mV)');
+time = 1:size(bins,2);
 
+% plot event amplitudes (mV) over wave number
+figure; plot(time,amp_median_binned_events*10^3,'-o','MarkerFaceColor','b'); ylim([0,0.5]); xlabel('Time (minutes)'); ylabel('Amplitude (mV)');
+hold on; errorbar(time,amp_median_binned_events*10^3,amp_stderror,'Color','black','LineStyle','none'); box off; set(gcf,'color','w'); set(gca,'LineWidth',2);
+title('Median event amplitude +/- SEM');
+%figure; plot(bins/6,amp_mean_binned_events*10^3); ylim([0,0.5]); xlabel('Time (minutes)'); ylabel('Amplitude (mV)');
+
+saveas(gcf,'baseline_stability.pdf')
