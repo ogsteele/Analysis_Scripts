@@ -23,7 +23,8 @@ elseif answer == 2
         % if answer is no
         if answer == 1
             % run ephysIO and concatenate time and waves to save the data
-            ephysIO('trainingset.phy',[time waves],'s','A')
+            ephysIO('trainingset.phy',[time (waves*0.01)],'s','A') % .tdms scaling for James
+            %ephysIO('trainingset.phy',[time waves],'s','A')
             % display that you're done here
             disp('Done here, look in the directory for the training set')
             return
