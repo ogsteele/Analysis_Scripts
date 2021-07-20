@@ -6,7 +6,7 @@ answer = menu('Ready to create a training set?','nope','yep');
 % if answer is no ...
 if answer == 1
     % ... end loop and tell the user to type when ready
-    disp('Type "extractor" when ready')
+    disp('Type "trainingset" when ready (if on path)')
     return
 % but if the answer is yes ...
 elseif answer == 2
@@ -14,19 +14,20 @@ elseif answer == 2
     disp('Lets go!')
     % run the extractr function below, with the output as waves
     waves = extractr;
-    % create the time for later
-    time = 5e-5*[1:size(waves,1)]';
     % infinite for loop for more waves added onto the end
-    for k = 1:inf
+    for k = 1:50000
         % ask the user if they want to add another
         answer = menu('add another?','nope','yep');
         % if answer is no
         if answer == 1
             % run ephysIO and concatenate time and waves to save the data
+            waves = waves(1:(size(waves,1)-1),:); % temp fix for the jump scaling due to Vm change
+            time = 5e-5*[1:size(waves,1)]';
             ephysIO('trainingset.phy',[time (waves*0.01)],'s','A') % .tdms scaling for James
             %ephysIO('trainingset.phy',[time waves],'s','A')
             % display that you're done here
-            disp('Done here, look in the directory for the training set')
+            disp('Training set concatenated. Training set saved in current directory (below)')
+            disp(pwd)
             return
         % if the answer is yes though, run it again and go again    
         elseif answer == 2
@@ -41,7 +42,7 @@ end
 function waves = extractr
 %% Load in w/ ePhysIO
 % Select raw trace to visualise
-title_str = "1. Select raw compensated recording";
+title_str = "1. Select raw file of recording";
 menu(title_str,'OK');
 clear('title_str')
 [file,path,~] = uigetfile('*.*','1. Select raw file of recording');
