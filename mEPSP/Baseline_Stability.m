@@ -58,6 +58,10 @@ end
 
 time = 1:size(bins,2);
 
+% plot holding potential
+figure; plot(baseline(:,1)/60,baseline(:,2),'LineWidth',2); xlabel('Time (minutes)'); ylabel('Membrane potential (mV)');
+box off; set(gcf,'color','w'); set(gca,'LineWidth',2); title('Membrane potential over time');
+
 % plot event amplitudes (mV) over wave number
 figure; plot(time,amp_median_binned_events*10^3,'-o','MarkerFaceColor','b'); ylim([0,0.5]); xlabel('Time (minutes)'); ylabel('Amplitude (mV)');
 hold on; errorbar(time,amp_median_binned_events*10^3,amp_stderror,'Color','black','LineStyle','none'); box off; set(gcf,'color','w'); set(gca,'LineWidth',2);
