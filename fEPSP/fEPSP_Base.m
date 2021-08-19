@@ -1,8 +1,10 @@
 function [output,Penn_SlopeVal,Max_Amp_Val] = fEPSP_Base
 % Author: O.G. Steele
 % Date of Creation: 21.02.19
-% Updated: 23.01.20
+% Updated: 19.08.21
 
+% Change notes: ephysIO update has changed functionality, switching to
+% h5read (19.08.21)
 %% Arguments
 % LPF = Low pass frequency value in Hz
 
@@ -33,15 +35,38 @@ close all
 %end
 
 %% ephysIO file selection
+% Time_Diff and meta taken from first recording in first file path
 
-cd(uigetdir)
-cd('000')
-S = ephysIO({'Clamp2.ma',1}); % loads channel 1 by default
-Meta = readMeta('Clamp2.ma'); % reads metadata on the first clamp2.ma file, should be consistent across all
+path = uigetdir;
+S = ephysIO({[path,'/000/Clamp2.ma'],1}); % loads channel 1 by default
+Meta = readMeta([path,'/000/Clamp2.ma']); % reads metadata on the first clamp2.ma file, should be consistent across all
 
 Time = S.array(:,1);
 Time_Diff = S.xdiff;
-Raw_Data = S.array(:,2:end);
+
+% Get list of all subfolders.
+allSubFolders = genpath(path);
+
+% Parse into a cell array.
+remain = allSubFolders;
+listOfFolderNames = {};
+while true
+	[singleSubFolder, remain] = strtok(remain, ':');
+	if isempty(singleSubFolder)
+		break;
+	end
+	listOfFolderNames = [listOfFolderNames singleSubFolder];
+end
+numberOfFolders = length(listOfFolderNames);
+
+% Change directory to first sweep 
+% Note, not first folder as that's the master folder
+for i = 2:numberOfFolders
+    cd(char(listOfFolderNames(:,i)));
+    Data = h5read('Clamp2.ma','/data');
+    Raw_Data(:,i-1) = Data(:,1);
+end
+%%
 num_Sweeps = size(Raw_Data,2);
 
 % adjust sweeps to zero and smooth to compensate for noise

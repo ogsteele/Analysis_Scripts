@@ -75,7 +75,7 @@ end
 
 ylabel('Amplitude (mV)','fontsize',16);
 xlabel('Time (ms)','fontsize',16);
-xlim([0 Time_Conv]);
+%xlim([0 Time_Conv]);
 title('fEPSP I/V Traces','fontsize',18)
 box off
 set(gcf,'color','w')
