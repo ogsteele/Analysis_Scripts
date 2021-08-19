@@ -14,7 +14,7 @@ elseif answer == 2
     disp('Lets go!')
     % run the extractr function below, with the output as waves
     waves = extractr;
-    % infinite for loop for more waves added onto the end
+    % (near) infinite for loop for more waves added onto the end
     for k = 1:50000
         % ask the user if they want to add another
         answer = menu('add another?','nope','yep');
