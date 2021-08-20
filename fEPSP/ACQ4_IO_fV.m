@@ -46,6 +46,7 @@ Time_Diff = S.xdiff;
 
 % Change directory to first sweep 
 % Note, not first folder as that's the master folder
+% PREALLOCATE HERE
 for i = 2:numberOfFolders
     cd(char(listOfFolderNames(:,i)));
     Data = h5read('Clamp2.ma','/data');
@@ -58,33 +59,41 @@ end
 basemean = mean(Trace(1:stim_point,:));
 adjusted = Trace(:,:) - basemean;
 
-% convert to mV
-adjusted = adjusted * 1e-3;
+% append time and optionally save as ephysIO format
 
-% consider applying a low pass filter (below 1000) or a median filter to
-% remove noise
-t = Time;
-y = adjusted;
-for i = 1:size(adjusted,2)
-    yf(:,i) = medianf(y(:,i),t,3);
-end
-
-adjusted = yf;
-
+% apply a 500 Hz LPF
+array = [Time (filter1(adjusted(:,:), Time, 0, 500))];
 %% Identify Features
 % NOTE: Programme this section in line with peakscale.m
 
 % FIBRE VOLLEY
-figure; plot(Time,adjusted)
-xlabel('Time (s)'); ylabel('Amplitude (mV)'); box off; set(gcf,'color','white'); set(gca,'LineWidth',2)
-title('1. Locate afferent fibre volley (two clicks, one pre and one post)')
+figure; plot(array(:,2:end))
+xlabel('Data Points'); ylabel('Amplitude (mV)'); box off; set(gcf,'color','white'); set(gca,'LineWidth',2)
+title('1. Locate afferent fibre volley and hit enter')
+
+% allow user to zoom and then hit enter when at region to exit zoom
+zoom on
+waitfor(gcf, 'CurrentCharacter', char(13))
+zoom reset
+zoom off
 
 % get points pre and post fibre volley and plot regions
-[x,~] = ginput(2)
-hold on; xline(x(1),'color','green','linestyle','--')
-hold on; xline(x(2),'color','green','linestyle','--')
+title('2. Isolate the fibre volley with two clicks')
+[x,~] = ginput(2);
+hold on; xline(x(1),'color','red','linestyle','--')
+hold on; xline(x(2),'color','red','linestyle','--')
+% get the minimum value from this region (FV Peak Amp)
+
+for i = 2:size(array,2)
+    [max_fv_peak(i-1), max_fv_ind(i-1)] = min(array(round(x(1)):round(x(2)),i-1));
+    max_fv_ind(i-1) = max_fv_ind(i-1) + (round(x(1)) - 1);
+    mean_fv_peak(i-1) = mean(array(max_fv_ind(i-1)-1:max_fv_ind(i-1)+1,i-1));
+    hold on; plot(max_fv_ind(i-1),max_fv_peak(i-1),'ro','MarkerSize',10,'linewidth',3)
+end
 
 % FIELD POTENTIAL
+
+% assume that the field potential begins immediately after the fibre volley
 
 %% Get Points
 % plot the sweeps and get points pre and post field potential
