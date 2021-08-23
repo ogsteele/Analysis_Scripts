@@ -17,7 +17,8 @@ close all
 start_path = fullfile(matlabroot, '\toolbox\images\imdemos');
 
 % Ask user to confirm or change.
-path = uigetdir;
+path =  'D:\Downloads\OneDrive_2021-08-23\LTP - Base_001'; % whilst in development
+%path = uigetdir;
 if path == 0
 	return;
 end
@@ -27,16 +28,10 @@ topLevelFolder = path;
 allSubFolders = genpath(topLevelFolder);
 
 % Parse into a cell array.
-remain = allSubFolders;
-listOfFolderNames = {};
-while true
-	[singleSubFolder, remain] = strtok(remain, ':');
-	if isempty(singleSubFolder)
-		break;
-	end
-	listOfFolderNames = [listOfFolderNames singleSubFolder];
-end
-numberOfFolders = length(listOfFolderNames);
+listOfFolderNames = split(allSubFolders,';'); % single use of split over strtok
+listOfFolderNames = listOfFolderNames(2:end,:); % remove the first as not a subfolder
+listOfFolderNames = listOfFolderNames(~cellfun('isempty',listOfFolderNames)); % remove any empty values
+numberOfFolders = length(listOfFolderNames); % count the number of folders
 
 % Collect params/meta via ephysIO
 S = ephysIO({[path,'/000/Clamp2.ma'],1}); % loads channel 1 by default
@@ -47,10 +42,10 @@ Time_Diff = S.xdiff;
 % Change directory to first sweep 
 % Note, not first folder as that's the master folder
 % PREALLOCATE HERE
-for i = 2:numberOfFolders
-    cd(char(listOfFolderNames(:,i)));
+for i = 1:numberOfFolders
+    cd(char(listOfFolderNames(i,:)));
     Data = h5read('Clamp2.ma','/data');
-    Trace(:,i-1) = Data(:,1);
+    Trace(:,i) = Data(:,1);
 end
 
 %% Adjust Traces 
@@ -67,7 +62,8 @@ array = [Time (filter1(adjusted(:,:), Time, 0, 500))];
 % NOTE: Programme this section in line with peakscale.m
 
 % FIBRE VOLLEY
-figure; plot(array(:,2:end))
+figure; 
+plot(array(:,2:end))
 xlabel('Data Points'); ylabel('Amplitude (mV)'); box off; set(gcf,'color','white'); set(gca,'LineWidth',2)
 title('1. Locate afferent fibre volley and hit enter')
 
@@ -80,18 +76,49 @@ zoom off
 % get points pre and post fibre volley and plot regions
 title('2. Isolate the fibre volley with two clicks')
 [x,~] = ginput(2);
+x = round(x);
 hold on; xline(x(1),'color','red','linestyle','--')
 hold on; xline(x(2),'color','red','linestyle','--')
 % get the minimum value from this region (FV Peak Amp)
 
 for i = 2:size(array,2)
-    [max_fv_peak(i-1), max_fv_ind(i-1)] = min(array(round(x(1)):round(x(2)),i-1));
-    max_fv_ind(i-1) = max_fv_ind(i-1) + (round(x(1)) - 1);
+    [max_fv_peak(i-1), max_fv_ind(i-1)] = min(array(x(1):x(2),i-1));
+    max_fv_ind(i-1) = max_fv_ind(i-1) + (x(1) - 1);
     mean_fv_peak(i-1) = mean(array(max_fv_ind(i-1)-1:max_fv_ind(i-1)+1,i-1));
     hold on; plot(max_fv_ind(i-1),max_fv_peak(i-1),'ro','MarkerSize',10,'linewidth',3)
 end
 
 % FIELD POTENTIAL
+% Seperate out window of interest
+% make the start of the fEPSP the maximum point AFTER the FV peak
+for i = 2:size(array,2)
+    [fEPSP_start_val(i-1), fEPSP_start_ind(i-1)] = max(array(max_fv_ind(i-1):x(2),i-1));
+    fEPSP_start_ind(i-1) = fEPSP_start_ind(i-1) + (max_fv_ind(i-1) - 1);
+    hold on; plot(fEPSP_start_ind(i-1),fEPSP_start_val(i-1),'go','MarkerSize',10,'linewidth',3)
+end
+
+% calculate the averaged trace from all waves and plot the end
+av_trace = (mean(array(:,2:end),2));
+fEPSP_end = min(find((abs(av_trace(x(2):end)-0) < 0.00000001))) +x(2);
+win_size = fEPSP_end - x(2);
+hold on; plot(fEPSP_end,0,'bo','MarkerSize',10,'linewidth',3);
+
+% find the maximum amplitude of each trace
+for i = 2:size(array,2)
+    extra_filtered_array(:,i-1) = array(fEPSP_start_ind(i-1):(fEPSP_start_ind(i-1) + win_size),i);
+end
+extra_filtered_array_time = Time(1:win_size+1);
+
+for i = 2:size(array,2)
+    [fEPSP_max_amp_val(i-1),fEPSP_max_amp_ind(i-1)] = min(array(fEPSP_start_ind(i-1):fEPSP_end,i));
+    fEPSP_max_amp_ind(i-1) = fEPSP_max_amp_ind(i-1) + (fEPSP_start_ind(i-1)-1);
+    hold on; plot(fEPSP_max_amp_ind(i-1),fEPSP_max_amp_val(i-1),'yo','MarkerSize',10,'linewidth',3); 
+end
+
+
+fEPSP_Window = array((fEPSP_start:fEPSP_end),2:end);
+num_points = size(fEPSP_Window,1);
+fEPSP_Window_Time = linspace(0,Time_Diff * num_points,num_points);
 
 % assume that the field potential begins immediately after the fibre volley
 
