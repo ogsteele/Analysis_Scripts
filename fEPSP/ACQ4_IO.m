@@ -39,7 +39,7 @@ numberOfFolders = length(listOfFolderNames);
 % Change directory to first sweep 
 % Note, not first folder as that's the master folder
 for i = 2:numberOfFolders
-    cd(char(listOfFolderNames(:,i)));
+    cd(char(listOfFolderNames(i,:)));
     Data = h5read('Clamp2.ma','/data');
     Trace(:,i-1) = Data(:,1);
 end

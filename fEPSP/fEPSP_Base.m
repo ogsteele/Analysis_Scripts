@@ -44,25 +44,25 @@ Meta = readMeta([path,'/000/Clamp2.ma']); % reads metadata on the first clamp2.m
 Time = S.array(:,1);
 Time_Diff = S.xdiff;
 
+if path == 0
+	return;
+end
+topLevelFolder = path;
+
 % Get list of all subfolders.
-allSubFolders = genpath(path);
+allSubFolders = genpath(topLevelFolder);
 
 % Parse into a cell array.
-remain = allSubFolders;
-listOfFolderNames = {};
-while true
-	[singleSubFolder, remain] = strtok(remain, ':');
-	if isempty(singleSubFolder)
-		break;
-	end
-	listOfFolderNames = [listOfFolderNames singleSubFolder];
-end
-numberOfFolders = length(listOfFolderNames);
+listOfFolderNames = split(allSubFolders,';'); % single use of split over strtok
+listOfFolderNames = listOfFolderNames(2:end,:); % remove the first as not a subfolder
+listOfFolderNames = listOfFolderNames(~cellfun('isempty',listOfFolderNames)); % remove any empty values
+numberOfFolders = length(listOfFolderNames); % count the number of folders
+
 
 % Change directory to first sweep 
 % Note, not first folder as that's the master folder
 for i = 2:numberOfFolders
-    cd(char(listOfFolderNames(:,i)));
+    cd(char(listOfFolderNames(i,:)));
     Data = h5read('Clamp2.ma','/data');
     Raw_Data(:,i-1) = Data(:,1);
 end
@@ -77,12 +77,19 @@ zeroed_trace = (Raw_Data(:,:) - basemean) * 1000; % and unit converted to mV
 YF = filter1(zeroed_trace, Time, 0, 1000);
 
 % plot the sweeps and get points pre and post field potential
-plot(zeroed_trace(3500:7500,:));
+plot(zeroed_trace(:,:));
 title('Select fEPSP Window')
 ylabel('Amplitude (mV)')
 xlabel('Number of data points')
-ylim([-1 1.5]);
-xlim([0 2000]);
+%ylim([-1 1.5]);
+%xlim([0 2000]);
+
+% allow user to zoom and then hit enter when at region to exit zoom
+zoom on
+waitfor(gcf, 'CurrentCharacter', char(13))
+zoom reset
+zoom off
+
 hold on
 [x,~] = ginput;
 close
