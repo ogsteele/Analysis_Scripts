@@ -27,11 +27,17 @@ topLevelFolder = path;
 % Get list of all subfolders.
 allSubFolders = genpath(topLevelFolder);
 
-% Parse into a cell array.
-listOfFolderNames = split(allSubFolders,';'); % single use of split over strtok
-listOfFolderNames = listOfFolderNames(2:end,:); % remove the first as not a subfolder
+% parse into a cell array
+listOfFolderNames = regexp(allSubFolders,pathsep,'split'); % OS independent
+listOfFolderNames = listOfFolderNames(2:end); % remove the first as not a subfolder
 listOfFolderNames = listOfFolderNames(~cellfun('isempty',listOfFolderNames)); % remove any empty values
 numberOfFolders = length(listOfFolderNames); % count the number of folders
+
+% Parse into a cell array.
+% listOfFolderNames = split(allSubFolders,':'); % single use of split over strtok
+% listOfFolderNames = listOfFolderNames(2:end,:); % remove the first as not a subfolder
+% listOfFolderNames = listOfFolderNames(~cellfun('isempty',listOfFolderNames)); % remove any empty values
+% numberOfFolders = length(listOfFolderNames); % count the number of folders
 
 % Collect params/meta via ephysIO
 S = ephysIO({[path,'/000/Clamp2.ma'],1}); % loads channel 1 by default
@@ -43,7 +49,7 @@ Time_Diff = S.xdiff;
 % Note, not first folder as that's the master folder
 % PREALLOCATE HERE
 for i = 1:numberOfFolders
-    cd(char(listOfFolderNames(i,:)));
+    cd(char(listOfFolderNames(i)));
     Data = h5read('Clamp2.ma','/data');
     Trace(:,i) = Data(:,1);
 end
@@ -192,6 +198,8 @@ plot(mean_fv_peak*-1,Penn_SlopeVal*-1);
 xlabel('Fibre Volley Amplitude (V)'); ylabel('Slope Value (V/S)'); box off; set(gcf,'color','white'); set(gca,'LineWidth',2)
 title('Fibre Volley Amplitude vs Slope Value Plot')
 
+% DEV 
+figure; plot(array(:,1),array(:,2:end)); xlabel('Time (s)');
 %% Define output
 cd ..
 out.meta.S = S;
