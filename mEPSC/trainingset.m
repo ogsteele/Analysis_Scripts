@@ -1,5 +1,7 @@
 %% Training Set Creator
 % Simple script, bundled with function, to create a training set.
+% consider adding new line here to check for whether or not the data needs
+% to be scaled.
 
 % ask if user is ready
 answer = menu('Ready to create a training set?','nope','yep');
@@ -23,8 +25,8 @@ elseif answer == 2
             % run ephysIO and concatenate time and waves to save the data
             waves = waves(1:(size(waves,1)-1),:); % temp fix for the jump scaling due to Vm change
             time = 5e-5*[1:size(waves,1)]';
-            ephysIO('trainingset.phy',[time (waves*0.01)],'s','A') % .tdms scaling for James
-            %ephysIO('trainingset.phy',[time waves],'s','A')
+            %ephysIO('trainingset.phy',[time (waves*0.01)],'s','A') % .tdms scaling for James
+            ephysIO('trainingset.phy',[time waves],'s','A')
             % display that you're done here
             disp('Training set concatenated. Training set saved in current directory (below)')
             disp(pwd)
