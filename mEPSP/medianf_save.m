@@ -23,7 +23,7 @@ y=S.array(:,2)*0.01*1000; % array
 % poles_str = append('_',sprintf('%.0f',poles_num)); % convert to string
 
 % comment out if the above is there
-poles_num = 15; % convert to number
+poles_num = 3; % convert to number
 poles_str = append('_',sprintf('%.0f',poles_num)); % convert to string
 
 % set filetype to save to
