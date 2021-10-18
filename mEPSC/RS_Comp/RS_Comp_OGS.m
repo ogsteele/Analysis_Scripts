@@ -121,7 +121,6 @@ figure; plot(splits(:,1))
 title("2. Zoom into the test pulse BEFORE clicking enter to select a single start point")
 pause
 title_str = "2. Zoom into the test pulse BEFORE clicking enter to select a single start point";
-disp("2. Zoom into the test pulse BEFORE clicking enter to select a single start point")
 if ~ispc; menu(title_str,'OK'); end
 clear('title_str')
 [x,y] = ginput(1);
@@ -138,7 +137,15 @@ Param.pulse_window = Param.pulse_start:Param.pulse_end;
 %plot(splits(Param.pulse_window,size(splits,2)))
 %legend("first pulse","last pulse")
 %title("first and last raw test pulses overlaid")
-clear x y
+
+%% Median filter the recording minus the test pulse
+
+perf_noise = menu('Was there perfusion noise present?','Yes','No');
+if perf_noise == 0 
+    return
+else
+    [splits, nf_splits] = TP_null_MedianF_function(Param,splits,x);
+end
 
 %% Generate necessary whole cell paramaters
 wcp_raw = WCP(splits,Param);
