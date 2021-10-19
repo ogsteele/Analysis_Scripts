@@ -141,10 +141,9 @@ Param.pulse_window = Param.pulse_start:Param.pulse_end;
 %% Median filter the recording minus the test pulse
 
 perf_noise = menu('Was there perfusion noise present?','Yes','No');
-if perf_noise == 0 
-    return
-else
+if perf_noise == 1 
     [splits, nf_splits] = TP_null_MedianF_function(Param,splits,x);
+else
 end
 
 %% Generate necessary whole cell paramaters

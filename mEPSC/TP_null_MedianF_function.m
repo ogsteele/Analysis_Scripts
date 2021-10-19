@@ -108,6 +108,8 @@ function [splits, nf_splits] = TP_null_MedianF_function(Param,splits,x)
 % close
 
 %% exlcudedata, filter and restitch
+% % warning off
+warning('off','MATLAB:colon:nonIntegerIndex')
 nf_splits = splits;
 
 for i = 1:size(splits,2)
