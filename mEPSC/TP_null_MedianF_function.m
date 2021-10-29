@@ -1,4 +1,4 @@
-function [splits, nf_splits] = TP_null_MedianF_function(Param,splits,x)
+function [splits, nf_splits] = TP_null_MedianF_function(Param,splits,x,poles)
 
 %% exclude data before median save
 
@@ -126,7 +126,7 @@ for i = 1:size(splits,2)
     tx = ~excludedata(array,time,'range',range_s); % excl.
     
     % filter the region, bar exclusions
-    yf = medianf(array(tf), time(tf) ,11); % filtered array
+    yf = medianf(array(tf), time(tf) ,poles); % filtered array
     
     % now add back in the bit you didn't want to be filtered
     full = vertcat(yf(1:x(1)),array(tx),yf((x(1)):end));

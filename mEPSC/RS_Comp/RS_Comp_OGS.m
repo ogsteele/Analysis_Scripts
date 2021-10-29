@@ -139,10 +139,10 @@ Param.pulse_window = Param.pulse_start:Param.pulse_end;
 %title("first and last raw test pulses overlaid")
 
 %% Median filter the recording minus the test pulse
-
+poles = 9;
 perf_noise = menu('Was there perfusion noise present?','Yes','No');
 if perf_noise == 1 
-    [splits, nf_splits] = TP_null_MedianF_function(Param,splits,x);
+    [splits, nf_splits] = TP_null_MedianF_function(Param,splits,x,poles);
 else
 end
 
