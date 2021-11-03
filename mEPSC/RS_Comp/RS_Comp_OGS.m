@@ -20,10 +20,6 @@
 % figures:
 % raw wcp values and filtered trace
 % compensated wcp values and filtered trace
-%% TO DO
-% Consider final output structures
-% Change units on axis 7 of master subplot
-% add units and titles to subplots
 
 % start with a blank workspace 
 clear
@@ -31,23 +27,8 @@ close all
 
 %% Options
 % for speed, set plots to off
-plots = false; % true / false (logical)
+plots = false; % true / false (logical), faster if off
 comp_penn = true; % leave as true (logical)
-
-%% Parameters
-% Amplifier / Sampling settings
-Param.amp_scalef = 0.5; % default scale factor for amplifier used in V / nA
-Param.sample_rate = 20000; % in Hz
-Param.split_length = 10; % in seconds, frequency of test pulses
-% Test pulse settings
-Param.pulse_amp = -0.002; % in V
-Param.Vh = -45; % holding voltage in mV
-Param.voltage_step = 2; % in mV
-Param.pulse_duration = 10; % in ms
-Param.pulse_points = (Param.pulse_duration*Param.sample_rate)/1000;               % convert from ms to data points
-% Compensation settings
-Param.Vrev = 0; % reversal potential in mV (close to zero for AMPAR/NMDAR)
-Param.des_Rs = 8; % desired series resistance for recordings to be compensated to
 
 %% Load in w/ ePhysIO
 % Select raw trace to visualise
@@ -70,27 +51,47 @@ end
 % tidy workspace
 clear('path','ans')
 
-%% What gain level was the recording performed at
-prompt = {'Gain value of the raw recording'};
-dlgtitle = 'Input Gain setting';
-dims = [1 50];
-def = {'100'}; % default gain value in my case is 100
-gain = inputdlg(prompt,dlgtitle,dims,def);
-gain = str2double(gain); % convert to number
+%% Open notes.txt file, if present
+% if notes.txt associated with recording exists, print in command window
+a = split(file,'.');
+file = append(char(a(1)),'_notes.txt');
+if exist(file,'file')
+    type(file)
+else
+end
 
-% overwrite the gain value set in parameters
-Param.amplifier_gain = gain;
+%% Set parameters
+prompt = {'Enter Amplifier Scale Factor:',...
+    'Enter Sample Rate (Hz):',...
+    'Enter Gain Value of Recording:',...
+    'Enter Split Length (s):',...
+    'Enter Test Pulse Amplitude (V):',...
+    'Enter Holding Potential (mV):',...
+    'Enter Test Pulse Voltage Step (mV):',...
+    'Enter Test Pulse Duration (ms):',...
+    'Enter Reversal Potential (mV):',...
+    'Enter Desired Rs Value (MOhms):'};
+dlg_title = 'Input parameters';
+num_lines = 1;
+def = {'0.5','20000','100','10','-0.002','-70','2','10','0','8'};
+answer  = inputdlg(prompt,dlg_title,num_lines,def,'on');
+answer = str2double(answer);
 
-%% What Vm was the recording performed at
-prompt = {'Holding potential in mV'};
-dlgtitle = 'Holding Potential (mV)';
-dims = [1 50];
-def = {'-70'}; 
-Vh = inputdlg(prompt,dlgtitle,dims,def);
-Vh = str2double(Vh); % convert to number
+% Amplifier / Sampling settings
+Param.amp_scalef = answer(1); % default scale factor for amplifier used in V / nA
+Param.sample_rate = answer(2); % in Hz
+Param.amplifier_gain = answer(3); 
+Param.split_length = answer(4); % in seconds, frequency of test pulses
+% Test pulse settings
+Param.pulse_amp = answer(5); % in V
+Param.Vh = answer(6); % holding voltage in mV
+Param.voltage_step = answer(7); % in mV
+Param.pulse_duration = answer(8); % in ms
+Param.pulse_points = (Param.pulse_duration*Param.sample_rate)/1000;               % convert from ms to data points
+% Compensation settings
+Param.Vrev = answer(9); % reversal potential in mV (close to zero for AMPAR/NMDAR)
+Param.des_Rs = answer(10); % desired series resistance for recordings to be compensated to
 
-% overwrite the gain value set in parameters
-Param.Vh = Vh;
 %% Split the data into ten second waves
 
 % convert the data in pA
@@ -146,7 +147,7 @@ Param.pulse_window = Param.pulse_start:Param.pulse_end;
 %legend("first pulse","last pulse")
 %title("first and last raw test pulses overlaid")
 
-%% Median filter the recording minus the test pulse
+% Median filter the recording minus the test pulse
 poles = 9;
 perf_noise = menu('Was there perfusion noise present?','Yes','No');
 if perf_noise == 1 
