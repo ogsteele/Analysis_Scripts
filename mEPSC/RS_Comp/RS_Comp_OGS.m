@@ -31,15 +31,13 @@ close all
 
 %% Options
 % for speed, set plots to off
-plots = true; % true / false (logical)
+plots = false; % true / false (logical)
 comp_penn = true; % leave as true (logical)
 
 %% Parameters
 % Amplifier / Sampling settings
 Param.amp_scalef = 0.5; % default scale factor for amplifier used in V / nA
 Param.sample_rate = 20000; % in Hz
-Param.amplifier_scale = 2e09; % actually 2e-09, however 2e09 reverses this
-Param.amplifier_gain = 100; % gain set by experimenter (default is 100)
 Param.split_length = 10; % in seconds, frequency of test pulses
 % Test pulse settings
 Param.pulse_amp = -0.002; % in V
@@ -73,7 +71,6 @@ end
 clear('path','ans')
 
 %% What gain level was the recording performed at
-% ask how much to trim
 prompt = {'Gain value of the raw recording'};
 dlgtitle = 'Input Gain setting';
 dims = [1 50];
@@ -83,6 +80,17 @@ gain = str2double(gain); % convert to number
 
 % overwrite the gain value set in parameters
 Param.amplifier_gain = gain;
+
+%% What Vm was the recording performed at
+prompt = {'Holding potential in mV'};
+dlgtitle = 'Holding Potential (mV)';
+dims = [1 50];
+def = {'-70'}; 
+Vh = inputdlg(prompt,dlgtitle,dims,def);
+Vh = str2double(Vh); % convert to number
+
+% overwrite the gain value set in parameters
+Param.Vh = Vh;
 %% Split the data into ten second waves
 
 % convert the data in pA
