@@ -54,9 +54,9 @@ clear('path','ans')
 %% Open notes.txt file, if present
 % if notes.txt associated with recording exists, print in command window
 a = split(file,'.');
-file = append(char(a(1)),'_notes.txt');
-if exist(file,'file')
-    type(file)
+notes_file = append(char(a(1)),'_notes.txt');
+if exist(notes_file,'file')
+    type(notes_file)
 else
 end
 
