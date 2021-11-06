@@ -22,13 +22,14 @@
 % compensated wcp values and filtered trace
 
 % start with a blank workspace 
-%clear
+clear
 close all
 
 %% Options
 % for speed, set plots to off
 plots = false; % true / false (logical), faster if off
 comp_penn = true; % leave as true (logical)
+perf_noise = 1; % application of medianf to remove perfusion noise, logical
 
 %% Load in w/ ePhysIO
 % Select raw trace to visualise
@@ -148,15 +149,18 @@ Param.pulse_window = Param.pulse_start:Param.pulse_end;
 %title("first and last raw test pulses overlaid")
 
 %% Median filter the recording minus the test pulse
+% use as standard now to a) increase consistency, b) increase speed
 poles = 7;
-perf_noise = menu('Was there perfusion noise present?','Yes','No');
+% menu('Was there perfusion noise present?','Yes','No');
 if perf_noise == 1 
+    disp('Applying 7 pole median filter ...');
     [splits, nf_splits] = TP_null_MedianF_function(Param,splits,x,poles);
 else
 end
 
 %% Generate necessary whole cell paramaters
 wcp_raw = WCP(splits,Param);
+disp('Generating raw whole cell properties ... ')
 
 %% Compensation Penn
 % adapted from rscomp_Penn.m
@@ -192,10 +196,11 @@ s(:,2) = (vertcat(corr_p_splits(:))) * 1e-12;
 t = 0:(1/Param.sample_rate):(1/Param.sample_rate)*(length(s));
 s(:,1) = t(1:end-1);
 a = split(filename,'.');
+disp('Saving compensated recording in current wd ...')
 filename_comp = append(char(a(1)),'_rscomp.phy');
-ephysIO(filename_comp,s,S.xunit,S.yunit,S.names,S.notes,'int16')
+ephysIO(filename_comp,s,S.xunit,S.yunit,S.names,S.notes,'int32')
 
-
+disp('Saving output to current wd ...')
 % output
 comp_output.parameters = Param;
 comp_output.raw_splits = splits; 
@@ -216,6 +221,10 @@ file = append(char(a(1)),'_wcp.mat');
 % if larger than 2GB error will arise, use this line instead
 save(file, 'comp_output', '-v7.3')
 % NOTE TO CHANGE BACK AFTER
+
+disp('Plotting Compensated Trace')
+figure; plot(S.array(:,1),S.array(:,2)); 
+xlabel('Time (s)'); ylabel('Ampltidue (A)'); title('Compensated Trace')
 
 % tidy up
 clear sampInt R_s C_m V_hold s t comp_penn filename filename_comp a 
@@ -364,6 +373,8 @@ else
     clear('plots')
 end
 
+
+disp('Recording compensated and saved')
 %% Define Functions
 
 
