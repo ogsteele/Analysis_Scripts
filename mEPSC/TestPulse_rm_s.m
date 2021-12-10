@@ -78,7 +78,7 @@ pause
 title_str = "2. Zoom into the test pulse BEFORE clicking enter to select a single start point";
 if ~ispc; menu(title_str,'OK'); end
 clear('title_str')
-[x,y] = ginput(1);
+[x,~] = ginput(1);
 close
 
 % create pulse paramaters from ginput selection
