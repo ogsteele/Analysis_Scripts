@@ -1,3 +1,23 @@
+function [output] = CurrentStep 
+% user should select the first 'Clamp1.ma' recording
+
+
+% output is a matlab structure containing the following;
+% steps - current amplitude of each step in pA
+% numSpikes - number of spikes per wave
+% Rh - Rheobase in pA
+% sag_pA - Ih Sag Amplitude in mV
+% sag_ratio - Ih Sag : steady state rati
+% seak - Overshoot in mV
+% afterhyp - Afterhyperpolarisation value in mV
+% amp - Action potential amplitude in mV
+% thresh - Threshold potential in mV
+% half - Halfwidth in ms
+% rise - Depolarisation rate in mV/s
+% fall - Repolarisation rate in mV/s
+% IR - Input Resistance in mOhm
+
+
 [file,path] = uigetfile('*.ma');
 S = ephysIO(fullfile(path,file));
 % preallocate pks, locs, w, p
@@ -91,26 +111,75 @@ set(gca,'linewidth',2); set(gcf,'color','white'); xlabel('Current Step (pA)'); y
 
 % plot action potential
 AP_Window = Waves(out(wavenum_first)-500:out(wavenum_first)+500,wavenum_first)*1000;
-figure; plot(Time(1:1001),AP_Window,'linewidth',2,'color','black');
-box off; title('Action Potential Analysis')
-set(gca,'linewidth',2); set(gcf,'color','white'); xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
 
+% Overshoot in mV
 [Overshoot,ind_o] = max(AP_Window);
-hold on; plot(ind_o*Time(2),Overshoot,'*r')
-[Afterhyperpolarisation,ind_a] = min(AP_Window(ind_o:end))
-hold on; plot((ind_a+ind_o)*Time(2),Afterhyperpolarisation,'* y')
+% Afterhyperpolarisation in mV
+[Afterhyperpolarisation,ind_a] = min(AP_Window(ind_o:end));
+% Baseline & Amplitude
 Base = mean(AP_Window(1:350));
-hold on; yline(Base,'--b')
-Amplitude = abs(Base - Overshoot)
+Amplitude = abs(Base - Overshoot); % in mV
 
+% plot action potential waveform
+figure; plot(AP_Window, gradient(AP_Window),'linewidth',2,'color','black')
+box off; title('Action Potential Waveform')
+set(gca,'linewidth',2); set(gcf,'color','white'); xlabel('Membrane Potential (mV)'); ylabel('dV/dt');
+
+% Action potential halfwidth
+% Halfwidth in ms
+figure
+[AP_pk,AP_l,Halfwidth,AP_pr] = findpeaks(AP_Window-Base,'MinPeakHeight',0,...
+        'MaxPeakWidth',0.02*10^4,...
+        'MinPeakDistance',600,...
+        'WidthReference','halfheight',...
+        'Annotate','extent');
+findpeaks(AP_Window-Base,'MinPeakHeight',0,...
+        'MaxPeakWidth',0.02*10^4,...
+        'MinPeakDistance',600,...
+        'WidthReference','halfheight',...
+        'Annotate','extent');
+box off; grid off; xlabel('Data Points'); ylabel('Adjusted membrane potential');
+set(gca,'linewidth',2); set(gcf,'color','white'); title('Action Potential Analysis');
+ylim([-40 120])
+Halfwidth = (Halfwidth*Time(2))*1000; % Halfwidth in ms
 %deal with the legend later
 
+% Action Potential Threshold
+% as defined by the first peak of the third derivative
+% (or second derivative of dv/dt as per Serkeli et al., 2004)
+[~,thresh_ind,~,~] = findpeaks(gradient(gradient(gradient(AP_Window))),...
+    'MinPeakProminence',0.1, ...
+    'MinPeakWidth',3, ...
+    'NPeaks',1);
+hold on; plot(gradient(gradient(gradient(AP_Window)))*100-20);
+Threshold = AP_Window(thresh_ind); % in mV
+hold on; plot(thresh_ind,Threshold-Base,'Or') % plot threshold
+hold on; plot((ind_a+ind_o),Afterhyperpolarisation-Base,'* y') % plot after
 
+% Depolarisation Rate
+% between 25 % and 75 % of the rise phase
+rise_25 = round(0.25*(ind_o - thresh_ind)) + thresh_ind;
+rise_75 = round(0.75*(ind_o - thresh_ind)) + thresh_ind;
+Rise = mean(gradient(AP_Window(rise_25:rise_75)));
+hold on; plot((rise_25:rise_75),AP_Window(rise_25:rise_75)-Base,'linewidth',2)
+
+% Repolarisation Rate
+% between 10 % and 60 % of the falling phase
+fall_25 = round(0.1*(ind_o+ind_a - ind_o)) + ind_o;
+fall_75 = round(0.6*(ind_o+ind_a - ind_o)) + ind_o;
+Fall = mean(gradient(AP_Window(fall_25:fall_75)));
+hold on; plot((fall_25:fall_75),AP_Window(fall_25:fall_75)-Base,'linewidth',2,'color','red')
+
+legend('trace','peak', ...
+    'amplitude','halfwidth', ...
+    'border','dvdt_3', ...
+    'threshold','afterhyp', ...
+    'rise','fall',...
+    'Location','northeast')
 %% Input Resistance
 % Calculates input resistance in MOhm from the difference in voltage, divided by
 % the current applied, to the the steady state potentials on the last two
 % waves
-
 
 % plot waves used for input resistance calculation
 figure; plot(Time,Waves(:,1)*1000,'color','black'); hold on; plot(Time,Waves(:,2)*1000,'color','red')
@@ -136,3 +205,19 @@ txt_1 = ['\bf Input Resistance: '];
 txt_2 = [num2str(IR) ' M\Omega \rightarrow'];
 hold on; text(0.7,(mean(Waves(IR_start:IR_end,2))*1000) + 5,txt_1)
 hold on; text(0.8,(mean(Waves(IR_start:IR_end,2))*1000) + 3,txt_2)
+
+%% Output
+output.steps = pA;
+output.numSpikes = numSpikes;
+output.Rh = Rh;
+output.sag_pA = Ih_Sag_Amp;
+output.sag_ratio = Ih_Sag_Percentage;
+output.peak = Overshoot;
+output.afterhyp = Afterhyperpolarisation;
+output.amp = Amplitude;
+output.thresh = Threshold;
+output.half = Halfwidth;
+output.rise = Rise;
+output.fall = Fall;
+output.IR = IR;
+end
