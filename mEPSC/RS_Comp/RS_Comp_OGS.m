@@ -7,7 +7,6 @@
 % Dependencies - ensure in path
 % ephysIO (https://github.com/acp29/eventer/blob/master/base/ephysIO.m)
 
-
 % Output:
 % .parameters = experimental parameters
 % .raw_splits = raw recording split into 10s waves 
@@ -20,14 +19,14 @@
 % figures:
 % raw wcp values and filtered trace
 % compensated wcp values and filtered trace
-
+%% 
 % start with a blank workspace 
 clear
 close all
 
 %% Options
 % for speed, set plots to off
-plots = false; % true / false (logical), faster if off
+plots = true; % true / false (logical), faster if off
 comp_penn = true; % leave as true (logical)
 perf_noise = 1; % application of medianf to remove perfusion noise, logical
 
@@ -58,48 +57,122 @@ a = split(file,'.');
 notes_file = append(char(a(1)),'_notes.txt');
 if exist(notes_file,'file')
     type(notes_file)
+    notes_import = readcell(notes_file); % read in notes file
+    % check if the notes file being loaded is compatible
+    if isequal(char(notes_import(1,1)),'Scale factor to generate data from tdms file')
+        params_set = 1;
+            % Amplifier / Sampling settings
+        Param.scaling = cell2mat(notes_import(1,2)); % scaling to generate data
+        Param.amplifier = char(notes_import(2,2)); % Amplifier used
+        Param.amp_scalef = cell2mat(notes_import(3,2)); % default scale factor for amplifier used in V / nA 
+            temp_sr = char(notes_import(6,2));
+        Param.sample_rate = str2double(temp_sr(1:end-3)); % in Hz
+            clear temp_sr
+        Param.amplifier_gain = cell2mat(notes_import(4,2));
+            temp_sl = char(notes_import(10,2));
+        Param.split_length = str2double(temp_sl(1:end-2)); % in seconds, frequency of test pulses
+            clear temp_sl
+        Param.amp_lpf = char(notes_import(5,2)); % low pass filter cut off in Hz
+        Param.yunit = char(notes_import(7,2));
+        Param.xunit = 'S';
+        % Test pulse settings
+            temp_Vh = char(notes_import(9,2));
+        Param.Vh = str2double(temp_Vh(1:end-11)); % holding voltage in mV
+            clear temp_Vh
+            temp_vs = char(notes_import(13,2));
+        Param.voltage_step = abs(str2double(temp_vs(1:end-11))); % in mV
+            clear temp_vs;
+            temp_pd = char(notes_import(12,2));
+        Param.pulse_duration = (str2double(temp_pd(1:end-2))); % in s
+            clear temp_pd
+        Param.pulse_points = (Param.pulse_duration*Param.sample_rate);               % convert from ms to data points
+        % Compensation settings
+        Param.Vrev = 0; % reversal potential in mV (close to zero for AMPAR/NMDAR)
+        Param.des_Rs = 8; % desired series resistance for recordings to be compensated to
+    else % if notes file is not compatible, enter manually
+        params_set = 0;
+        disp('Notes file not compatible, check notes file or enter manually')
+        prompt = {'Enter Scaling to generate data',...
+            'Enter Amplifier Scale Factor:',...
+            'Enter Sample Rate (Hz):',...
+            'Enter Gain Value of Recording:',...
+            'Enter Split Length (s):',...
+            'Enter Test Pulse Amplitude (V):',...
+            'Enter Holding Potential (mV):',...
+            'Enter Test Pulse Voltage Step (mV):',...
+            'Enter Test Pulse Duration (ms):',...
+            'Enter Reversal Potential (mV):',...
+            'Enter Desired Rs Value (MOhms):'};
+        dlg_title = 'Input parameters';
+        num_lines = 1;
+        def = {'2e-11','2e-09','25000','100','10','-0.002','-60','2','10','0','8'};
+        answer  = inputdlg(prompt,dlg_title,num_lines,def,'on');
+        answer = str2double(answer);
+    end
 else
+    params_set = 0;
+    disp('No notes file present')
+    prompt = {'Enter Scaling to generate data',...
+        'Enter Amplifier Scale Factor:',...
+        'Enter Sample Rate (Hz):',...
+        'Enter Gain Value of Recording:',...
+        'Enter Split Length (s):',...
+        'Enter Test Pulse Amplitude (V):',...
+        'Enter Holding Potential (mV):',...
+        'Enter Test Pulse Voltage Step (mV):',...
+        'Enter Test Pulse Duration (ms):',...
+        'Enter Reversal Potential (mV):',...
+        'Enter Desired Rs Value (MOhms):'};
+    dlg_title = 'Input parameters';
+    num_lines = 1;
+    def = {'2e-11','2e-09','25000','100','10','-0.002','-60','2','10','0','8'};
+    answer  = inputdlg(prompt,dlg_title,num_lines,def,'on');
+    answer = str2double(answer);
 end
 
-%% Set parameters
-prompt = {'Enter Amplifier Scale Factor:',...
-    'Enter Sample Rate (Hz):',...
-    'Enter Gain Value of Recording:',...
-    'Enter Split Length (s):',...
-    'Enter Test Pulse Amplitude (V):',...
-    'Enter Holding Potential (mV):',...
-    'Enter Test Pulse Voltage Step (mV):',...
-    'Enter Test Pulse Duration (ms):',...
-    'Enter Reversal Potential (mV):',...
-    'Enter Desired Rs Value (MOhms):'};
-dlg_title = 'Input parameters';
-num_lines = 1;
-def = {'0.5','20000','100','10','-0.002','-70','2','10','0','8'};
-answer  = inputdlg(prompt,dlg_title,num_lines,def,'on');
-answer = str2double(answer);
+% Set parameters
+% prompt = {'Enter Scaling to generate data',...
+%     'Enter Amplifier Scale Factor:',...
+%     'Enter Sample Rate (Hz):',...
+%     'Enter Gain Value of Recording:',...
+%     'Enter Split Length (s):',...
+%     'Enter Test Pulse Amplitude (V):',...
+%     'Enter Holding Potential (mV):',...
+%     'Enter Test Pulse Voltage Step (mV):',...
+%     'Enter Test Pulse Duration (ms):',...
+%     'Enter Reversal Potential (mV):',...
+%     'Enter Desired Rs Value (MOhms):'};
+% dlg_title = 'Input parameters';
+% num_lines = 1;
+% def = {'2e-11','2e-09','25000','100','10','-0.002','-60','2','10','0','8'};
+% answer  = inputdlg(prompt,dlg_title,num_lines,def,'on');
+% answer = str2double(answer);
 
 % Amplifier / Sampling settings
-Param.amp_scalef = answer(1); % default scale factor for amplifier used in V / nA
-Param.sample_rate = answer(2); % in Hz
-Param.amplifier_gain = answer(3); 
-Param.split_length = answer(4); % in seconds, frequency of test pulses
-% Test pulse settings
-Param.pulse_amp = answer(5); % in V
-Param.Vh = answer(6); % holding voltage in mV
-Param.voltage_step = answer(7); % in mV
-Param.pulse_duration = answer(8); % in ms
-Param.pulse_points = (Param.pulse_duration*Param.sample_rate)/1000;               % convert from ms to data points
-% Compensation settings
-Param.Vrev = answer(9); % reversal potential in mV (close to zero for AMPAR/NMDAR)
-Param.des_Rs = answer(10); % desired series resistance for recordings to be compensated to
-
+if params_set == 0 % if params have not been set as above
+    Param.scaling = answer(1); % scaling to generate data
+    Param.amp_scalef = answer(2); % default scale factor for amplifier used in V / nA
+    Param.sample_rate = answer(3); % in Hz
+    Param.amplifier_gain = answer(4); 
+    Param.split_length = answer(5); % in seconds, frequency of test pulses
+    % Test pulse settings
+    Param.Vh = answer(7); % holding voltage in mV
+    Param.voltage_step = answer(8); % in mV
+    Param.pulse_duration = answer(9); % in ms
+    Param.pulse_points = (Param.pulse_duration*Param.sample_rate)/1000;               % convert from ms to data points
+    % Compensation settings
+    Param.Vrev = answer(10); % reversal potential in mV (close to zero for AMPAR/NMDAR)
+    Param.des_Rs = answer(11); % desired series resistance for recordings to be compensated to
+else
+end
 %% Split the data into ten second waves
 
 % convert the data in pA
-S.array(:,2) = (S.array(:,2)/(Param.amp_scalef * Param.amplifier_gain)*1000); % in pA
+S.array(:,2) = (S.array(:,2)*Param.scaling)* 1e12; % in pA
+
+
 % calculate the length of the recording
-length_raw = length(S.array(:,2)); % whole recording in data points
-length_seconds = length_raw/Param.sample_rate; % whole recording in seconds
+length_seconds = length(S.array(:,2))/Param.sample_rate; % whole recording in seconds
 n_splits = floor(length_seconds/Param.split_length); % number of splits, rounded down 
 % calculate the number of data points per split
 length_raw_split = Param.split_length * Param.sample_rate;
@@ -119,8 +192,8 @@ end
 
 % create a matrix of the split recording and preallocate
 splits = zeros(length_raw_split,n_splits);
-for s = 1:n_splits
-    splits(:,s) = S.array(start(s):finish(s),2);
+for j = 1:n_splits
+    splits(:,j) = S.array(start(j):finish(j),2);
 end
 
 % tidy up workspace
@@ -142,11 +215,11 @@ Param.pulse_end = Param.pulse_start + Param.pulse_points;                       
 Param.pulse_window = Param.pulse_start:Param.pulse_end;
 
 % plot first and last window used to calculate wcp parameters
-%figure; plot(splits(Param.pulse_window,1))
-%hold on
-%plot(splits(Param.pulse_window,size(splits,2)))
-%legend("first pulse","last pulse")
-%title("first and last raw test pulses overlaid")
+% figure; plot(splits(Param.pulse_window,1))
+% hold on
+% plot(splits(Param.pulse_window,size(splits,2)))
+% legend("first pulse","last pulse")
+% title("first and last raw test pulses overlaid")
 
 %% Median filter the recording minus the test pulse
 % use as standard now to a) increase consistency, b) increase speed
@@ -192,7 +265,7 @@ end
 % calculate whole cell properties from the compensated traces
 wcp_corr_penn = WCP(corr_p_splits,Param);
 % save the compensated trace
-s(:,2) = (vertcat(corr_p_splits(:))) * 1e-12;
+s(:,2) = (vertcat(corr_p_splits(:))) * 1e-12; % vertically concatenate and convert to A
 t = 0:(1/Param.sample_rate):(1/Param.sample_rate)*(length(s));
 s(:,1) = t(1:end-1);
 a = split(filename,'.');
@@ -222,9 +295,9 @@ file = append(char(a(1)),'_wcp.mat');
 save(file, 'comp_output', '-v7.3')
 % NOTE TO CHANGE BACK AFTER
 
-disp('Plotting Compensated Trace')
-figure; plot(S.array(:,1),S.array(:,2)); 
-xlabel('Time (s)'); ylabel('Ampltidue (A)'); title('Compensated Trace')
+%disp('Plotting Compensated Trace')
+%figure; plot(S.array(:,1),S.array(:,2)); 
+%xlabel('Time (s)'); ylabel('Ampltidue (A)'); title('Compensated Trace')
 
 % tidy up
 clear sampInt R_s C_m V_hold s t comp_penn filename filename_comp a 
@@ -292,9 +365,9 @@ if plots == true
     ax7.Box = 'off';
     
     % save figure1
-    a = split(file,'.');
-    file_raw = append(char(a(1)),'_raw.pdf');
-    saveas(gcf,file_raw)
+    %a = split(file,'.');
+    %file_raw = append(char(a(1)),'_raw.pdf');
+    %saveas(gcf,file_raw)
     
     % create figure 2
     [YF, median_YF, x, x2] = TestPulse_rm(corr_p_splits,Param);
@@ -360,10 +433,10 @@ if plots == true
     % save figure2
     a = split(file,'.');
     file_raw = append(char(a(1)),'_rscomp.pdf');
-    saveas(gcf,file_raw)
+    %saveas(gcf,file_raw)
     
-    YF = [x' YF];
-    figure; plot(YF(:,1), YF(:,2)); xlabel('time (s)'); ylabel('amp (pA)'); saveas(gcf,'tprm.fig');
+    %YF = [x' YF];
+    %figure; plot(YF(:,1), YF(:,2)); xlabel('time (s)'); ylabel('amp (pA)'); saveas(gcf,'tprm.fig');
 
     clear plots ax1 ax2 ax3 ax4 ax5 ax6 ax7 YF median_YF i x fraction ans file
     clear wcp_raw wcp_corr_penn
@@ -450,7 +523,7 @@ end
 function out = WCP(data,parameters)
 %     input arguements:
 %               data = x by n array of raw data where n is the number of
-%                   sweeps or traces
+%                   sweeps or traces (in pA)
 %               paramaters = structure of parameters set in the experiment
 %                   as defined at the start of this script
 %     output arguemennts:
@@ -460,6 +533,7 @@ function out = WCP(data,parameters)
 % The baseline resting current, or holding current (Ih) is the trimmed
 % average of the 10 seconds following the test pulse. Trimmed mean of 33%
 % was used (Mendeleev, 1895)
+
 Ih = zeros(size(data,2),1);
 for i = 1:size(data,2)
     Ih(i) = trimmean(data(parameters.pulse_end:end,i),33,'floor');                   % in pA
@@ -497,7 +571,7 @@ Cm = zeros(size(data,2),1);
 Q = zeros(size(data,2),1);
 for i = 1:size(data,2)
     % calculate the estimated charge
-    time = 0:5.0000e-05:0.01;                                              % in seconds
+    time = 0:1/parameters.sample_rate:0.01;                                              % in seconds
     Q(i) = trapz(time, ((base(i)-(data(parameters.pulse_window,i)))) * 1e-12); % charge in C
     % calculate the capacitance
     t = time(end)-time(1);
@@ -568,11 +642,11 @@ tprm_splits_conc = vertcat(tprm_splits(:));
 t = (0:size(tprm_splits_conc,1)-1)';
 t = t./parameters.sample_rate;
 YF = filter1(tprm_splits_conc, t, 0, 300);
-x = linspace(0,(size(tprm_splits_conc,1)/20000),size(tprm_splits_conc,1));
+x = linspace(0,(size(tprm_splits_conc,1)/parameters.sample_rate),size(tprm_splits_conc,1));
 %figure
 %plot(x,YF,'Color',[0 0.4470 0.7410 0.2]) % to make lighter
 %title('filter')
-x2 = linspace(0,(size(tprm_splits_conc,1)/20000),size(median_YF,1));
+x2 = linspace(0,(size(tprm_splits_conc,1)/parameters.sample_rate),size(median_YF,1));
 %hold on
 %plot(x2,smooth(median_YF),'linewidth',4,'color',[0 0.4470 0.7410]) % not made lighter
 tprm = YF;
@@ -597,8 +671,8 @@ nf_splits = splits;
 
 for i = 1:size(splits,2)
     array = splits(:,i);
-    time = 0:5.0000e-05:Param.split_length;
-    time = time(1:Param.sample_rate*Param.split_length)';
+    time = 0:1/Param.sample_rate:Param.split_length;
+    time = time(1:Param.sample_rate*Param.split_length)'; % removes the last one?
 
     % select the range to exclude
     % tf = excludedata(ydata,xdata,'range',[100, 150]);
