@@ -1,4 +1,14 @@
 function [output] = CurrentStep 
+%% To Do
+% introduce the balanced logical into the current step protocol
+% save the output appropriately
+% take note of the filepath to enable copy pasting into excel spreadsheet
+% balance the affected results on the output if needed
+% include a way to calculate the Rs (both init, wcp and one other)
+% remember what on earth the third way of doing it was ... 
+
+%% Code
+
 % user should select the first 'Clamp1.ma' recording
 
 
@@ -6,9 +16,9 @@ function [output] = CurrentStep
 % steps - current amplitude of each step in pA
 % numSpikes - number of spikes per wave
 % Rh - Rheobase in pA
-% sag_pA - Ih Sag Amplitude in mV
+% sag_mV - Ih Sag Amplitude in mV
 % sag_ratio - Ih Sag : steady state rati
-% seak - Overshoot in mV
+% peak - Overshoot in mV
 % afterhyp - Afterhyperpolarisation value in mV
 % amp - Action potential amplitude in mV
 % thresh - Threshold potential in mV
@@ -16,6 +26,13 @@ function [output] = CurrentStep
 % rise - Depolarisation rate in mV/s
 % fall - Repolarisation rate in mV/s
 % IR - Input Resistance in mOhm
+
+% bridge balance corrected values
+% IR
+% thresh
+% afterhyp
+% peak
+
 
 
 [file,path] = uigetfile('*.ma');
@@ -40,6 +57,11 @@ end
 figure; plot(Time,Waves*1000,'color','black')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
+
+% was this recording bridge balanced appropriately?
+dlgTitle    = 'User Question';
+dlgQuestion = 'Do you wish to continue?';
+balanced = questdlg(dlgQuestion,dlgTitle,'Yes','No','Yes');
 
 % determine rheobase as the first amount of current to induce APs in the
 % first 25% of the current step rather than the first current step value to
@@ -210,7 +232,7 @@ hold on; text(0.8,(mean(Waves(IR_start:IR_end,2))*1000) + 3,txt_2)
 output.steps = pA;
 output.numSpikes = numSpikes;
 output.Rh = Rh;
-output.sag_pA = Ih_Sag_Amp;
+output.sag_mV = Ih_Sag_Amp;
 output.sag_ratio = Ih_Sag_Percentage;
 output.peak = Overshoot;
 output.afterhyp = Afterhyperpolarisation;

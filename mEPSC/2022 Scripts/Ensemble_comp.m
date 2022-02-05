@@ -9,11 +9,8 @@
     % to read through the file paths and compile the events to create new
     % ensemble averages of each of MIXED, AMPAR, NMDAR traces. 
 
-% clear the workspace
-clear; close all;
-
-% reference the starting location
-home = pwd;
+% move to correct start point
+cd('E:\Experiments\NMDAR mEPSC\04_processing\Subtraction\2022 Analysis')
 
 % choose whether to plot individual figures too
 indi_fig = 0; % logical (1 plots, 0 skips)
@@ -30,7 +27,7 @@ for j = 1:3
     warning('off') % mute warnings
     paths = table2cell(readtable(file)); % read in filepaths
     paths = char(paths(:,1)); % convert to character arrays
-
+       
     % Analysis loop
     for i = 1:size(paths,1)
         % pull out event ensemble information
@@ -167,10 +164,11 @@ for j = 1:3
     end
     
     % return to home
-    cd(home)
+    cd('E:\Experiments\NMDAR mEPSC\04_processing\Subtraction\2022 Analysis')
 
     % create output
     out(j).Condition = strrep(file(1:end-7),'_',' ');
+    out(j).filepaths = paths;
     out(j).AMPAR = AMPAR;
     out(j).AMPAR_amp = AMPAR_amp;
     out(j).AMPAR_ave = AMPAR_ave;
@@ -186,7 +184,12 @@ for j = 1:3
     out(j).NMDAR = NMDAR;
     out(j).NMDAR_ave = NMDAR_ave;
     out(j).NMDAR_amp = NMDAR_amp;
+    out(j).N_rec =  size(out(j).MIXED_amp,1);
+    out(j).time = time;
 
+   
+    % clear variables
+    clearvars -except out indi_fig time
 end
 
 %% create the mixed master figure
@@ -201,7 +204,7 @@ figure;
     legend(out(1).Condition,out(2).Condition,out(3).Condition,'location','southeast','linewidth',0.001);
     % Amplitude Summary
     subplot(2,3,2)
-    Y = [out(1).MIXED_amp out(2).MIXED_amp abs(out(3).MIXED_amp)];
+    Y = padcat(out(1).MIXED_amp,out(2).MIXED_amp,abs(out(3).MIXED_amp));
     b = boxplot(Y,...
         'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
@@ -215,7 +218,7 @@ figure;
     ylabel('Amplitude (pA)'); xlabel('Condition'); title('Amplitude')
     % Hz Summary
     subplot(2,3,3)
-    Y = [out(1).MIXED_Hz out(2).MIXED_Hz abs(out(3).MIXED_Hz)];
+    Y = padcat(out(1).MIXED_Hz,out(2).MIXED_Hz,abs(out(3).MIXED_Hz));
     b = boxplot(Y,...
         'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
@@ -229,7 +232,7 @@ figure;
     ylabel('Frequency (Hz)'); xlabel('Condition'); title('Frequency')
     % Rise Summary
     subplot(2,3,5)
-    Y = [out(1).MIXED_rise out(2).MIXED_rise abs(out(3).MIXED_rise)];
+    Y = padcat(out(1).MIXED_rise,out(2).MIXED_rise,abs(out(3).MIXED_rise));
     b = boxplot(Y,...
         'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
@@ -243,7 +246,7 @@ figure;
     ylabel('Rise Time Constant (Hz)'); xlabel('Condition'); title('Rise Time')
     % Decay Summary
     subplot(2,3,6)
-    Y = [out(1).MIXED_decay out(2).MIXED_decay abs(out(3).MIXED_decay)];
+    Y = padcat(out(1).MIXED_decay,out(2).MIXED_decay,abs(out(3).MIXED_decay));
     b = boxplot(Y,...
         'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
@@ -268,7 +271,7 @@ figure;
     legend(out(1).Condition,out(2).Condition,out(3).Condition,'location','southeast','linewidth',0.001);
     % Amplitude Summary
     subplot(2,3,2)
-    Y = [out(1).AMPAR_amp out(2).AMPAR_amp abs(out(3).AMPAR_amp)];
+    Y = padcat(out(1).AMPAR_amp,out(2).AMPAR_amp,abs(out(3).AMPAR_amp));
     b = boxplot(Y,...
         'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
@@ -282,7 +285,7 @@ figure;
     ylabel('Amplitude (pA)'); xlabel('Condition'); title('Amplitude')
     % Hz Summary
     subplot(2,3,3)
-    Y = [out(1).AMPAR_Hz out(2).AMPAR_Hz abs(out(3).AMPAR_Hz)];
+    Y = padcat(out(1).AMPAR_Hz,out(2).AMPAR_Hz,abs(out(3).AMPAR_Hz));
     b = boxplot(Y,...
         'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
@@ -296,7 +299,7 @@ figure;
     ylabel('Frequency (Hz)'); xlabel('Condition'); title('Frequency')
     % Rise Summary
     subplot(2,3,5)
-    Y = [out(1).AMPAR_rise out(2).AMPAR_rise abs(out(3).AMPAR_rise)];
+    Y = padcat(out(1).AMPAR_rise,out(2).AMPAR_rise,abs(out(3).AMPAR_rise));
     b = boxplot(Y,...
         'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
@@ -310,7 +313,7 @@ figure;
     ylabel('Rise Time Constant (Hz)'); xlabel('Condition'); title('Rise Time')
     % Decay Summary
     subplot(2,3,6)
-    Y = [out(1).AMPAR_decay out(2).AMPAR_decay abs(out(3).AMPAR_decay)];
+    Y = padcat(out(1).AMPAR_decay,out(2).AMPAR_decay,abs(out(3).AMPAR_decay));
     b = boxplot(Y,...
         'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
@@ -335,7 +338,7 @@ figure;
     legend(out(1).Condition,out(2).Condition,out(3).Condition,'location','southeast','linewidth',0.001);
     % Amplitude Summary
     subplot(2,3,2)
-    Y = [abs(out(1).NMDAR_amp) abs(out(2).NMDAR_amp) abs(out(3).NMDAR_amp)];
+    Y = padcat(abs(out(1).NMDAR_amp),abs(out(2).NMDAR_amp),abs(out(3).NMDAR_amp));
     b = boxplot(Y,...
         'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
@@ -357,3 +360,5 @@ figure;
         ylabel('Amplitude (pA)'); xlabel('Time (s)');
         xlim([0 0.1]);ylim([-20 10]); title(out(i).Condition);
     end
+
+    clearvars -except out
