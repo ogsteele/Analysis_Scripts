@@ -1,16 +1,13 @@
 function [output] = CurrentStep 
 %% To Do
-% introduce the balanced logical into the current step protocol
 % save the output appropriately
-% take note of the filepath to enable copy pasting into excel spreadsheet
-% balance the affected results on the output if needed
-% include a way to calculate the Rs (both init, wcp and one other)
-% remember what on earth the third way of doing it was ... 
+% subplot figures
+% save subplotted figures
+% copy to clipboard
 
 %% Code
 
 % user should select the first 'Clamp1.ma' recording
-
 
 % output is a matlab structure containing the following;
 % steps - current amplitude of each step in pA
@@ -28,20 +25,27 @@ function [output] = CurrentStep
 % IR - Input Resistance in mOhm
 
 % bridge balance corrected values
-% IR
-% thresh
-% afterhyp
-% peak
+    % IR
+    % thresh
+    % afterhyp
+    % peak
 
-
-
+% load file of interest
 [file,path] = uigetfile('*.ma');
 S = ephysIO(fullfile(path,file));
-% preallocate pks, locs, w, p
-warning('off','signal:findpeaks:largeMinPeakHeight');
 Time = S.array(:,1);
 Waves = S.array(:,2:end);
-for i = 2:size(Waves,2)
+
+% preallocate pks, locs, w, p, numSpikes and mute error here
+warning('off','signal:findpeaks:largeMinPeakHeight');
+pks = cell(size(Waves,2),1);
+locs = cell(size(Waves,2),1);
+w = cell(size(Waves,2),1);
+p = cell(size(Waves,2),1);
+numSpikes = zeros(size(Waves,2),1);
+
+% findpeaks to determine number and location of AP's per wave
+for i = 1:size(Waves,2)
     % pks = value of peak
     % locs = index of peak
     % w = width
@@ -53,15 +57,11 @@ for i = 2:size(Waves,2)
         'WidthReference','halfheight');
     numSpikes(i) = size(pks{i},1);
 end
+
 % plot whole of current step protocol
 figure; plot(Time,Waves*1000,'color','black')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
-
-% was this recording bridge balanced appropriately?
-dlgTitle    = 'User Question';
-dlgQuestion = 'Do you wish to continue?';
-balanced = questdlg(dlgQuestion,dlgTitle,'Yes','No','Yes');
 
 % determine rheobase as the first amount of current to induce APs in the
 % first 25% of the current step rather than the first current step value to
@@ -73,11 +73,12 @@ idx = ~cellfun('isempty',C);
 out = zeros(size(C));
 out(idx) = cellfun(@(v)v(1),C(idx));
 logicalIndexes =  out< 27500 & out > 1;
-wavenum_first = (size(locs,2)-(sum(logicalIndexes)-1)); % wave that the first action potential following stimulus injection occurs on
+wavenum_first = (size(locs,1)-(sum(logicalIndexes)-1)); % wave that the first action potential following stimulus injection occurs on
 figure; plot(Time,Waves(:,wavenum_first),'color','red'); hold on; plot(Time,Waves(:,11),'color','black')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
-pA = [-100:10:190]';
+% pA = [-100:10:190]'; % legacy numbers
+pA = linspace(-200,400,size(Waves,2))';
 
 lgd = legend(char(string(pA(wavenum_first))),char(string(pA(11))),'linewidth',1);
 title(lgd,'Current (pA)')
@@ -220,7 +221,7 @@ hold on; xline(1.5,'--'); xline(1.3,'--')
 IR_start = 1.3/Time(2); 
 IR_end = 1.5/Time(2);
 deltaV = abs(mean(Waves(IR_start:IR_end,1)) - mean(Waves(IR_start:IR_end,2))); % Delta_Voltage (Volts)
-I = 10e-12; % I (Amps)
+I = 20e-12; % I (Amps)
 R = deltaV / I; % R (Ohms)
 IR = R / 1e6; % R (MegaOhms)
 txt_1 = ['\bf Input Resistance: '];
@@ -228,7 +229,78 @@ txt_2 = [num2str(IR) ' M\Omega \rightarrow'];
 hold on; text(0.7,(mean(Waves(IR_start:IR_end,2))*1000) + 5,txt_1)
 hold on; text(0.8,(mean(Waves(IR_start:IR_end,2))*1000) + 3,txt_2)
 
+%% Bridge Balance adjustments
+% apply necessary bridge balance adjustments if the user requested offline
+
+% plot the initial current step so user can see if recording was balanced
+t = figure; plot(Time(1:151),Waves(300:450,1)); box off; xlabel('Time (s)');
+title('Initial Current Step [Zoomed]'); set(gca,'linewidth',2); 
+set(gcf,'color','white'); ylabel('Membrane Potential (mV)'); 
+
+% was this recording bridge balanced appropriately?
+dlgTitle    = 'Bridge Balance';
+dlgQuestion = 'Was this recording appropriately bridge balanced?';
+balanced = questdlg(dlgQuestion,dlgTitle,'Yes','No','Yes');
+
+close(t) % closes the test fig as it's not interesting anymore
+
+% logical fork following balancing
+if balanced == "Yes"
+    disp('Recording appropriately balanced, no further action required')
+elseif balanced == "No"
+    disp('Recording not appropriately balanced, performing offline bridge balance')
+
+    % calculate Rs values from the initial current step
+    Istep = -60; % pA
+    % find the triple diff peak
+    [~, ind] = findpeaks((gradient(gradient(Waves(:,1))))*-1,...
+        'minPeakProminence',2.5e-4,'NPeaks',1);
+    % preallocate
+    Vm_1 = zeros(size(Waves,2),1);
+    Vm_2 = zeros(size(Waves,2),1);
+    delta_Vm = zeros(size(Waves,2),1);
+    Vm_adjust = zeros(size(Waves,2),1);
+    for i = 1:size(Waves,2)
+        Vm_1(i) = mean(Waves(1:ind,i)); % in V
+        Vm_2(i) = mean(Waves(405:410,i)); % in V
+        delta_Vm(i) = abs(Vm_1(i)-Vm_2(i))*1000; % in mV
+    end
+    Rs_Init = abs(median(delta_Vm/Istep)*1000); % in MOhm
+    for i = 1:size(Waves,2)
+        Vm_adjust(i) = ((Rs_Init*1e6)*(pA(i)*1e-12)); % in V (initial)
+    end
+    
+    % plot the required adjustment
+    figure; plot(pA, Vm_adjust*1000,'-o'); box off; set(gca,'linewidth',2); 
+    set(gcf,'color','white'); xlabel('pA'); ylabel('Adjustment req. (mV)')
+    title('Offline Bridge Balance Adjustment')
+    
+    % balance the data here
+    % IR adjustment
+    deltaV = abs((mean(Waves(IR_start:IR_end,1))-Vm_adjust(1)) ...
+        - (mean(Waves(IR_start:IR_end,2))-Vm_adjust(2))); % Delta_Voltage (Volts)
+    I = abs(pA(1)*1e-12 - pA(2)*1e-12); % I (Amps)
+    R = deltaV / I; % R (Ohms)
+    IR_new = R / 1e6; % R (MegaOhms)
+    % thresh
+    Threshold_new = Threshold-(Vm_adjust(wavenum_first)*1000);
+    % afterhyp
+    Afterhyperpolarisation_new = Afterhyperpolarisation-(Vm_adjust(wavenum_first)*1000);
+    % peak
+    Overshoot_new = Overshoot-(Vm_adjust(wavenum_first)*1000);
+    
+end
+
+
 %% Output
+% What Genotype was the animal?
+dlgTitle    = 'Genotpye';
+dlgQuestion = 'What Genotype was this animal?';
+genotype = questdlg(dlgQuestion,dlgTitle,'APOE3','APOE4','APOE3');
+
+% create output structure
+output.genotype = genotype;
+output.filepath = path;
 output.steps = pA;
 output.numSpikes = numSpikes;
 output.Rh = Rh;
@@ -242,4 +314,9 @@ output.half = Halfwidth;
 output.rise = Rise;
 output.fall = Fall;
 output.IR = IR;
+
+% save output
+
+%% Copy Clipboard for Excel Management
+% copy to clipboard if needed
 end
