@@ -1,15 +1,14 @@
 function [output] = CurrentStepper 
 %% To Do
-% save the output appropriately
-% subplot figures
-% save subplotted figures
-% copy to clipboard
+% consider finding more robust way of detecting the decay kinetics
 
 %% Code
 
-% user should select the first 'Clamp1.ma' recording
+% user should select the first 'Clamp1.ma' recording in the sequence
 
 % output is a matlab structure containing the following;
+% genotype - APOE3 or APOE4
+% filepath - filepath of the first wave
 % steps - current amplitude of each step in pA
 % numSpikes - number of spikes per wave
 % Rh - Rheobase in pA
@@ -22,7 +21,12 @@ function [output] = CurrentStepper
 % half - Halfwidth in ms
 % rise - Depolarisation rate in mV/s
 % fall - Repolarisation rate in mV/s
-% IR - Input Resistance in mOhm
+% IR - Input Resistance in MOhm
+% Rs_Init - Access resistance approximated from initial step  in MOhm
+% Offline_BB - Vm adjustments for offline bridge balance in V
+% Online_BB_performed = Yes/No 
+% Offline_BB_performed = Yes/No 
+
 
 % bridge balance corrected values
     % IR
@@ -59,9 +63,27 @@ for i = 1:size(Waves,2)
 end
 
 % plot whole of current step protocol
-figure; plot(Time,Waves*1000,'color','black')
+fh = figure();
+fh.WindowState = 'maximized'; subplot(7,4,[1,5]); plot(Time,Waves*1000,'color','black')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
-xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
+ylabel('Membrane Potential (mV)');
+title('Current Step Waveform')
+ax = gca; xax = ax.XAxis; set(xax,'visible','off')
+
+
+% plot the waveform of interest
+wavelength = Time(end);
+Hz = size(S.array,1)/wavelength;
+pA = linspace(-200,400,size(Waves,2))';
+pA_waveform = zeros(size(Waves,1),size(Waves,2)); 
+pA_waveform(0.01*Hz:0.06*Hz,:) = -60; % initial test pulse
+for i = 1:size(pA,1)
+    pA_waveform(0.5*Hz:1.5*Hz,i) = pA(i); 
+end
+subplot(7,4,9); plot(Time,pA_waveform(:,:),'linewidth',1,'color','black')
+box off; set(gca,'linewidth',2); set(gcf,'color','white');
+xlabel('Time (s)'); ylabel('Command(pA)'); ylim([-250 300])
+ax = gca; yax = ax.YAxis; set(yax,'TickDirection','out')
 
 % determine rheobase as the first amount of current to induce APs in the
 % first 25% of the current step rather than the first current step value to
@@ -74,7 +96,8 @@ out = zeros(size(C));
 out(idx) = cellfun(@(v)v(1),C(idx));
 logicalIndexes =  out< 27500 & out > 1;
 wavenum_first = (size(locs,1)-(sum(logicalIndexes)-1)); % wave that the first action potential following stimulus injection occurs on
-figure; plot(Time,Waves(:,wavenum_first),'color','red'); hold on; plot(Time,Waves(:,11),'color','black')
+subplot(7,4,[2,6,10]);
+plot(Time,Waves(:,wavenum_first),'color','red'); hold on; plot(Time,Waves(:,11),'color','black')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
 % pA = [-100:10:190]'; % legacy numbers
@@ -82,7 +105,7 @@ pA = linspace(-200,400,size(Waves,2))';
 
 lgd = legend(char(string(pA(wavenum_first))),char(string(pA(11))),'linewidth',1);
 title(lgd,'Current (pA)')
-
+title('Exemplary Waves')
 %% Membrane Excitability and Rheobase
 % determine rheobase as the first amount of current to induce APs in the
 % first 25% of the current step rather than the first current step value to
@@ -91,7 +114,8 @@ title(lgd,'Current (pA)')
 Rh = pA(wavenum_first); % Rheobase in pA
 
 % plot membrane excitability and Rheobase
-figure; plot(pA,numSpikes,'color','red','linewidth',3); box off; set(gcf,'color','white'); set(gca,'linewidth',2);
+subplot(7,4,[3,7,11])
+plot(pA,numSpikes,'color','red','linewidth',3); box off; set(gcf,'color','white'); set(gca,'linewidth',2);
 title('Membrane Excitability'); xlabel('Current Step (pA)'); ylabel('Number of Action Potentials')
 hold on; xline(Rh,'--','linewidth',1.5); 
 txt_Rh_1 = ['\bf Rheobase:  ' num2str(Rh) ' pA \rightarrow'];
@@ -102,7 +126,7 @@ text(Rh-100,8,txt_Rh_1);
 % Calculates both Amplitude (relative to steady state) and ratio (to steady state)
 
 % Plot Ih Sag Waves
-figure; plot(Time,Waves(:,11)*1000,'color','black'); hold on; plot(Time,Waves(:,1)*1000,'color','red')
+subplot(7,4,[17,21,25]); plot(Time,Waves(:,11)*1000,'color','black'); hold on; plot(Time,Waves(:,1)*1000,'color','red')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
 lgd = legend(char(string(pA(11))),char(string(pA(1))),...
@@ -127,7 +151,7 @@ for i = 1:11
 end 
 hold on; yline((SS_Value(1)-0.065)*1000,'--r'); yline((y(1)*1000),'--r');
 
-figure;
+subplot(7,4,[18,22,26]);
 plot(pA(1:11),Ih_Sag_Percentage,'color','black','linewidth',3); box off; title('Ih Sag')
 set(gca,'linewidth',2); set(gcf,'color','white'); xlabel('Current Step (pA)'); ylabel('Ih Sag - Steady State Ratio (%)');
 %% AP analysis
@@ -144,13 +168,13 @@ Base = mean(AP_Window(1:350));
 Amplitude = abs(Base - Overshoot); % in mV
 
 % plot action potential waveform
-figure; plot(AP_Window, gradient(AP_Window),'linewidth',2,'color','black')
+subplot(7,4,[20,24,28]); plot(AP_Window, gradient(AP_Window),'linewidth',2,'color','black')
 box off; title('Action Potential Waveform')
 set(gca,'linewidth',2); set(gcf,'color','white'); xlabel('Membrane Potential (mV)'); ylabel('dV/dt');
 
 % Action potential halfwidth
 % Halfwidth in ms
-figure
+subplot(7,4,[4,8,12]);
 [AP_pk,AP_l,Halfwidth,AP_pr] = findpeaks(AP_Window-Base,'MinPeakHeight',0,...
         'MaxPeakWidth',0.02*10^4,...
         'MinPeakDistance',600,...
@@ -205,7 +229,7 @@ legend('trace','peak', ...
 % waves
 
 % plot waves used for input resistance calculation
-figure; plot(Time,Waves(:,1)*1000,'color','black'); hold on; plot(Time,Waves(:,2)*1000,'color','red')
+subplot(7,4,[19,23,27]); plot(Time,Waves(:,1)*1000,'color','black'); hold on; plot(Time,Waves(:,2)*1000,'color','red')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
 lgd = legend(char(string(pA(1))),char(string(pA(2))),...
@@ -247,14 +271,12 @@ close(t) % closes the test fig as it's not interesting anymore
 % logical fork following balancing
 if balanced == "Yes"
     disp('Recording appropriately balanced, no further action required')
-    
-    % plot the required adjustment
-    figure; plot(pA, zeros(1,size(pA,2)),'-o'); box off; set(gca,'linewidth',2); 
-    set(gcf,'color','white'); xlabel('pA'); ylabel('Adjustment req. (mV)')
-    title('Offline Bridge Balance Adjustment Required')
+    Vm_adjust = NaN(size(Waves,2),1);
+    Rs_Init = NaN;
+    offline_BB_performed = "No";
 elseif balanced == "No"
     disp('Recording not appropriately balanced, performing offline bridge balance')
-
+    offline_BB_performed = "Yes";
     % calculate Rs values from the initial current step
     Istep = -60; % pA
     % find the triple diff peak
@@ -319,11 +341,18 @@ output.half = Halfwidth;
 output.rise = Rise;
 output.fall = Fall;
 output.IR = IR;
-output.Rs_Init = Rs_Init
+output.Rs_Init = Rs_Init;
+output.Offline_BB = Vm_adjust;
+output.Online_BB_performed = balanced;
+output.Offline_BB_performed = offline_BB_performed;
 
+% navigate to root dir
+cd(path)
+cd ..\..
 
 % save output
-
-%% Copy Clipboard for Excel Management
-% copy to clipboard if needed
+outname = split(strtrim(path),filesep);
+outname = char(string(outname(end-2)));
+saveas(fh,[outname,'.fig']);
+save([outname,'.mat'],'output')
 end
