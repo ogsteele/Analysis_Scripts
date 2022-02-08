@@ -32,8 +32,6 @@ function [output] = CurrentStepper
 % Online_BB_performed = Yes/No 
 % Offline_BB_performed = Yes/No 
 
-
-
 % bridge balance corrected values
     % IR
     % thresh
