@@ -1,4 +1,4 @@
-function [output] = CurrentStep 
+function [output] = CurrentStepper 
 %% To Do
 % save the output appropriately
 % subplot figures
@@ -247,6 +247,11 @@ close(t) % closes the test fig as it's not interesting anymore
 % logical fork following balancing
 if balanced == "Yes"
     disp('Recording appropriately balanced, no further action required')
+    
+    % plot the required adjustment
+    figure; plot(pA, zeros(1,size(pA,2)),'-o'); box off; set(gca,'linewidth',2); 
+    set(gcf,'color','white'); xlabel('pA'); ylabel('Adjustment req. (mV)')
+    title('Offline Bridge Balance Adjustment Required')
 elseif balanced == "No"
     disp('Recording not appropriately balanced, performing offline bridge balance')
 
@@ -273,7 +278,7 @@ elseif balanced == "No"
     % plot the required adjustment
     figure; plot(pA, Vm_adjust*1000,'-o'); box off; set(gca,'linewidth',2); 
     set(gcf,'color','white'); xlabel('pA'); ylabel('Adjustment req. (mV)')
-    title('Offline Bridge Balance Adjustment')
+    title('Offline Bridge Balance Adjustment Required')
     
     % balance the data here
     % IR adjustment
@@ -281,13 +286,13 @@ elseif balanced == "No"
         - (mean(Waves(IR_start:IR_end,2))-Vm_adjust(2))); % Delta_Voltage (Volts)
     I = abs(pA(1)*1e-12 - pA(2)*1e-12); % I (Amps)
     R = deltaV / I; % R (Ohms)
-    IR_new = R / 1e6; % R (MegaOhms)
+    IR = R / 1e6; % R (MegaOhms)
     % thresh
-    Threshold_new = Threshold-(Vm_adjust(wavenum_first)*1000);
+    Threshold = Threshold-(Vm_adjust(wavenum_first)*1000);
     % afterhyp
-    Afterhyperpolarisation_new = Afterhyperpolarisation-(Vm_adjust(wavenum_first)*1000);
+    Afterhyperpolarisation = Afterhyperpolarisation-(Vm_adjust(wavenum_first)*1000);
     % peak
-    Overshoot_new = Overshoot-(Vm_adjust(wavenum_first)*1000);
+    Overshoot = Overshoot-(Vm_adjust(wavenum_first)*1000);
     
 end
 
@@ -314,6 +319,8 @@ output.half = Halfwidth;
 output.rise = Rise;
 output.fall = Fall;
 output.IR = IR;
+output.Rs_Init = Rs_Init
+
 
 % save output
 
