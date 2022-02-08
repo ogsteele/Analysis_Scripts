@@ -8,6 +8,7 @@ function [output] = CurrentStepper
 
 % output is a matlab structure containing the following;
 % genotype - APOE3 or APOE4
+% ketamine exposure - Yes/No
 % filepath - filepath of the first wave
 % steps - current amplitude of each step in pA
 % numSpikes - number of spikes per wave
@@ -26,6 +27,7 @@ function [output] = CurrentStepper
 % Offline_BB - Vm adjustments for offline bridge balance in V
 % Online_BB_performed = Yes/No 
 % Offline_BB_performed = Yes/No 
+
 
 
 % bridge balance corrected values
@@ -325,8 +327,14 @@ dlgTitle    = 'Genotpye';
 dlgQuestion = 'What Genotype was this animal?';
 genotype = questdlg(dlgQuestion,dlgTitle,'APOE3','APOE4','APOE3');
 
+% Was the recording exposed to ketamine?
+dlgTitle    = 'Ketamine';
+dlgQuestion = 'Was this recorded in the presence of ketamine?';
+ketamine = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
+
 % create output structure
 output.genotype = genotype;
+output.ketamine = ketamine;
 output.filepath = path;
 output.steps = pA;
 output.numSpikes = numSpikes;
