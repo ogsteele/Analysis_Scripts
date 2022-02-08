@@ -11,6 +11,10 @@ function [output] = CurrentStepper
 % ketamine exposure - Yes/No
 % filepath - filepath of the first wave
 % steps - current amplitude of each step in pA
+% waveform - current step protocol waveform
+% time - time in s
+% waves - waves in V
+% ephysIO - ephysIO output format, with associated metadata if needed
 % numSpikes - number of spikes per wave
 % Rh - Rheobase in pA
 % sag_mV - Ih Sag Amplitude in mV
@@ -78,9 +82,9 @@ wavelength = Time(end);
 Hz = size(S.array,1)/wavelength;
 pA = linspace(-200,400,size(Waves,2))';
 pA_waveform = zeros(size(Waves,1),size(Waves,2)); 
-pA_waveform(0.01*Hz:0.06*Hz,:) = -60; % initial test pulse
+pA_waveform(round(0.01*Hz):round(0.06*Hz),:) = -60; % initial test pulse
 for i = 1:size(pA,1)
-    pA_waveform(0.5*Hz:1.5*Hz,i) = pA(i); 
+    pA_waveform(round(0.5*Hz):round(1.5*Hz),i) = pA(i); 
 end
 subplot(7,4,9); plot(Time,pA_waveform(:,:),'linewidth',1,'color','black')
 box off; set(gca,'linewidth',2); set(gcf,'color','white');
@@ -177,7 +181,7 @@ set(gca,'linewidth',2); set(gcf,'color','white'); xlabel('Membrane Potential (mV
 % Action potential halfwidth
 % Halfwidth in ms
 subplot(7,4,[4,8,12]);
-[AP_pk,AP_l,Halfwidth,AP_pr] = findpeaks(AP_Window-Base,'MinPeakHeight',0,...
+[~,~,Halfwidth,~] = findpeaks(AP_Window-Base,'MinPeakHeight',0,...
         'MaxPeakWidth',0.02*10^4,...
         'MinPeakDistance',600,...
         'WidthReference','halfheight',...
@@ -250,7 +254,7 @@ deltaV = abs(mean(Waves(IR_start:IR_end,1)) - mean(Waves(IR_start:IR_end,2))); %
 I = 20e-12; % I (Amps)
 R = deltaV / I; % R (Ohms)
 IR = R / 1e6; % R (MegaOhms)
-txt_1 = ['\bf Input Resistance: '];
+txt_1 = '\bf Input Resistance: ';
 txt_2 = [num2str(IR) ' M\Omega \rightarrow'];
 hold on; text(0.7,(mean(Waves(IR_start:IR_end,2))*1000) + 5,txt_1)
 hold on; text(0.8,(mean(Waves(IR_start:IR_end,2))*1000) + 3,txt_2)
@@ -337,6 +341,10 @@ output.genotype = genotype;
 output.ketamine = ketamine;
 output.filepath = path;
 output.steps = pA;
+output.waveform = pA_waveform;
+output.time = Time;
+output.waves = Waves;
+output.ephysIO = S;
 output.numSpikes = numSpikes;
 output.Rh = Rh;
 output.sag_mV = Ih_Sag_Amp;
