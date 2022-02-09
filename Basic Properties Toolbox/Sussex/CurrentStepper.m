@@ -240,11 +240,9 @@ V = Threshold; % threshold value
 N = AP_Window(ind_o:(ind_o+ind_a)); % period peak - hyperpolarisation
 [minValue, closestIndex] = min(abs(N - V.'));
 closestValue = N(closestIndex);
-% between 25 % and 75 % of the falling phase4
-old_fall_25 = round(0.25*(ind_o+ind_a - ind_o)) + ind_o;
-old_fall_75 = round(0.75*(ind_o+ind_a - ind_o)) + ind_o;
-fall_25 = round(0.25*(ind_o+closestIndex));
-fall_75 = round(0.75*(ind_o+closestIndex));
+% between 20 % and 80 % of the falling phase4
+fall_25 = round(0.2*(closestIndex)) + ind_o;
+fall_75 = round(0.8*(closestIndex)) + ind_o;
 Fall = mean(gradient(AP_Window(fall_25:fall_75)));
 hold on; plot((fall_25:fall_75),AP_Window(fall_25:fall_75)-Base,'linewidth',2,'color','red')
 
