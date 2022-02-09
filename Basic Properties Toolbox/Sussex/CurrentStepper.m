@@ -10,6 +10,7 @@ function [output] = CurrentStepper
 % genotype - APOE3 or APOE4
 % ketamine exposure - Yes/No
 % filepath - filepath of the first wave
+% ID - slice_ID on plate
 % steps - current amplitude of each step in pA
 % waveform - current step protocol waveform
 % time - time in s
@@ -43,6 +44,25 @@ function [output] = CurrentStepper
 S = ephysIO(fullfile(path,file));
 Time = S.array(:,1);
 Waves = S.array(:,2:end);
+
+
+% run analysis or not?
+    % plot figure
+    fh = figure();
+    plot(Time,Waves*1000,'color','black')
+    box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+    ylabel('Membrane Potential (mV)'); xlabel('Time (s)')
+    title('Current Step Waveform')
+    
+    % ask the user 
+    dlgTitle    = 'Run Analysis';
+    dlgQuestion = 'Would you like to run the Current Step Analysis?';
+    run = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
+    
+    % establish if statement for protocol
+    if run == "Yes"
+        close(fh) % close figure
+        disp('Performing Analysis, please wait ...')
 
 % preallocate pks, locs, w, p, numSpikes and mute error here
 warning('off','signal:findpeaks:largeMinPeakHeight');
@@ -215,9 +235,16 @@ Rise = mean(gradient(AP_Window(rise_25:rise_75)));
 hold on; plot((rise_25:rise_75),AP_Window(rise_25:rise_75)-Base,'linewidth',2)
 
 % Repolarisation Rate
-% between 10 % and 60 % of the falling phase
-fall_25 = round(0.1*(ind_o+ind_a - ind_o)) + ind_o;
-fall_75 = round(0.6*(ind_o+ind_a - ind_o)) + ind_o;
+% identify the closest value (and index) to the threshold value after peak
+V = Threshold; % threshold value
+N = AP_Window(ind_o:(ind_o+ind_a)); % period peak - hyperpolarisation
+[minValue, closestIndex] = min(abs(N - V.'));
+closestValue = N(closestIndex);
+% between 25 % and 75 % of the falling phase4
+old_fall_25 = round(0.25*(ind_o+ind_a - ind_o)) + ind_o;
+old_fall_75 = round(0.75*(ind_o+ind_a - ind_o)) + ind_o;
+fall_25 = round(0.25*(ind_o+closestIndex));
+fall_75 = round(0.75*(ind_o+closestIndex));
 Fall = mean(gradient(AP_Window(fall_25:fall_75)));
 hold on; plot((fall_25:fall_75),AP_Window(fall_25:fall_75)-Base,'linewidth',2,'color','red')
 
@@ -334,10 +361,18 @@ dlgTitle    = 'Ketamine';
 dlgQuestion = 'Was this recorded in the presence of ketamine?';
 ketamine = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
 
+% What was the slice ID?
+prompt = {'What was the slice ID for this recording?'};
+dlgtitle = 'Slice ID';
+definput = {'eg. E420211203#1'};
+dims = [1 40];
+slice_id = inputdlg(prompt,dlgtitle,dims,definput);
+
 % create output structure
 output.genotype = genotype;
 output.ketamine = ketamine;
 output.filepath = path;
+output.ID = slice_id;
 output.steps = pA;
 output.waveform = pA_waveform;
 output.time = Time;
@@ -369,4 +404,10 @@ outname = split(strtrim(path),filesep);
 outname = char(string(outname(end-2)));
 saveas(fh,[outname,'.fig']);
 save([outname,'.mat'],'output')
+
+% return to if loop from the top 
+    else
+        close(fh) % close figure
+        disp('Analysis Aborted, please find a new recording')
+    end
 end
