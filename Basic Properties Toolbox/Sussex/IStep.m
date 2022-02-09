@@ -1,6 +1,6 @@
-function [output] = CurrentStepper 
+function [out] = IStep 
 %% To Do
-% consider finding more robust way of detecting the decay kinetics
+% Confirm accuracy of the fall kinetic placement - looks a little off
 
 %% Code
 
@@ -227,19 +227,40 @@ Threshold = AP_Window(thresh_ind); % in mV
 hold on; plot(thresh_ind,Threshold-Base,'Or') % plot threshold
 hold on; plot((ind_a+ind_o),Afterhyperpolarisation-Base,'* y') % plot after
 
+% recalculate (and overwrite) the amplitude now you have a threshold
+Amplitude = abs((Overshoot-Base)-(Threshold-Base)); % in mV
+
 % Depolarisation Rate
-% between 25 % and 75 % of the rise phase
-rise_25 = round(0.25*(ind_o - thresh_ind)) + thresh_ind;
-rise_75 = round(0.75*(ind_o - thresh_ind)) + thresh_ind;
-Rise = mean(gradient(AP_Window(rise_25:rise_75)));
-hold on; plot((rise_25:rise_75),AP_Window(rise_25:rise_75)-Base,'linewidth',2)
+% identify the closest value (and index) to the threshold value after peak
+N = AP_Window(thresh_ind:ind_o)-Base; % period thresh - peak
+[~, closestIndex_20] = min(abs(N - 0.2*Amplitude.'));
+[~, closestIndex_80] = min(abs(N - 0.8*Amplitude.'));
+
+% between 20 % and 80 % of the rise phase (based on amplitude, not index)
+rise_20_ind = closestIndex_20 + thresh_ind;
+rise_80_ind = closestIndex_80 + thresh_ind;
+Rise = mean(gradient(AP_Window(rise_20_ind:rise_80_ind)));
+hold on; plot((rise_20_ind:rise_80_ind),AP_Window(rise_20_ind:rise_80_ind)-Base,'linewidth',2)
 
 % Repolarisation Rate
+
+% identify the closest value (and index) to the threshold value after peak
+N = AP_Window(ind_o:ind_o+ind_a)-Base; % period peak - hyper
+[~, closestIndex_20] = min(abs(N - 0.2*Amplitude.'));
+[~, closestIndex_80] = min(abs(N - 0.8*Amplitude.'));
+c = N(closestIndex_80)
+% between 20 % and 80 % of the rise phase (based on amplitude, not index)
+fall_20_ind = closestIndex_80 + ind_o;
+fall_80_ind = closestIndex_20 + ind_o;
+Rise = mean(gradient(AP_Window(fall_20_ind:fall_80_ind)));
+hold on; plot((fall_20_ind:fall_80_ind),AP_Window(fall_20_ind:fall_80_ind)-Base,'linewidth',2)
+
 % identify the closest value (and index) to the threshold value after peak
 V = Threshold; % threshold value
 N = AP_Window(ind_o:(ind_o+ind_a)); % period peak - hyperpolarisation
 [minValue, closestIndex] = min(abs(N - V.'));
 closestValue = N(closestIndex);
+
 % between 20 % and 80 % of the falling phase4
 fall_25 = round(0.2*(closestIndex)) + ind_o;
 fall_75 = round(0.8*(closestIndex)) + ind_o;
@@ -367,31 +388,31 @@ dims = [1 40];
 slice_id = inputdlg(prompt,dlgtitle,dims,definput);
 
 % create output structure
-output.genotype = genotype;
-output.ketamine = ketamine;
-output.filepath = path;
-output.ID = slice_id;
-output.steps = pA;
-output.waveform = pA_waveform;
-output.time = Time;
-output.waves = Waves;
-output.ephysIO = S;
-output.numSpikes = numSpikes;
-output.Rh = Rh;
-output.sag_mV = Ih_Sag_Amp;
-output.sag_ratio = Ih_Sag_Percentage;
-output.peak = Overshoot;
-output.afterhyp = Afterhyperpolarisation;
-output.amp = Amplitude;
-output.thresh = Threshold;
-output.half = Halfwidth;
-output.rise = Rise;
-output.fall = Fall;
-output.IR = IR;
-output.Rs_Init = Rs_Init;
-output.Offline_BB = Vm_adjust;
-output.Online_BB_performed = balanced;
-output.Offline_BB_performed = offline_BB_performed;
+out.genotype = genotype;
+out.ketamine = ketamine;
+out.filepath = path;
+out.ID = slice_id;
+out.steps = pA;
+out.waveform = pA_waveform;
+out.time = Time;
+out.waves = Waves;
+out.ephysIO = S;
+out.numSpikes = numSpikes;
+out.Rh = Rh;
+out.sag_mV = Ih_Sag_Amp;
+out.sag_ratio = Ih_Sag_Percentage;
+out.peak = Overshoot;
+out.afterhyp = Afterhyperpolarisation;
+out.amp = Amplitude;
+out.thresh = Threshold;
+out.half = Halfwidth;
+out.rise = Rise;
+out.fall = Fall;
+out.IR = IR;
+out.Rs_Init = Rs_Init;
+out.Offline_BB = Vm_adjust;
+out.Online_BB_performed = balanced;
+out.Offline_BB_performed = offline_BB_performed;
 
 % navigate to root dir
 cd(path)
