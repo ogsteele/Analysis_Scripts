@@ -1,8 +1,6 @@
-function [out] = IStep 
-%% To Do
-% Confirm accuracy of the fall kinetic placement - looks a little off
-
-%% Code
+function [output] = IStep
+%% About
+%@OGSteele, 2022
 
 % user should select the first 'Clamp1.ma' recording in the sequence
 
@@ -39,14 +37,38 @@ function [out] = IStep
     % afterhyp
     % peak
 
+%% Code
+
 % load file of interest
 [file,path] = uigetfile('*.ma');
 S = ephysIO(fullfile(path,file));
 Time = S.array(:,1);
 Waves = S.array(:,2:end);
 
+% cd to path
+splitPath = split(path,filesep);
+newPath = char(string(join(splitPath(1:end-3),"\")));
+cd(newPath)
+
+% check to see if I_step has already been run
+try
+    list = dir('**\*.mat'); % ending in .mat
+    pat = 'CC_IV_1_full_';
+    for i = 1:size(list,1)
+        list(i).isfile = startsWith(list(i).name,pat); % is it one of ours?
+    end
+    fileFlags = [list.isfile];
+    list = list(fileFlags); % save only the ones we're interested in
+    istep_run = 1;
+    ('IStep run detected, running with extracted settings as defaults')
+    load(list.name)
+catch
+    warning('Assuming IStep has not been run, running IStep normally');
+    istep_run = 0;
+end
 
 % run analysis or not?
+if istep_run == 0
     % plot figure
     fh = figure();
     plot(Time,Waves*1000,'color','black')
@@ -59,9 +81,12 @@ Waves = S.array(:,2:end);
     dlgQuestion = 'Would you like to run the Current Step Analysis?';
     run = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
     
+    close(fh) % close figure
+elseif istep_run == 1
+    run = "Yes";
+end
     % establish if statement for protocol
     if run == "Yes"
-        close(fh) % close figure
         disp('Performing Analysis, please wait ...')
 
 % preallocate pks, locs, w, p, numSpikes and mute error here
@@ -116,12 +141,12 @@ ax = gca; yax = ax.YAxis; set(yax,'TickDirection','out')
 % First AP of interest values
 C = locs;
 idx = ~cellfun('isempty',C);
-out = zeros(size(C));
-out(idx) = cellfun(@(v)v(1),C(idx));
-logicalIndexes =  out< 27500 & out > 1;
+outs = zeros(size(C));
+outs(idx) = cellfun(@(v)v(1),C(idx));
+logicalIndexes =  outs< 27500 & outs > 1;
 wavenum_first = (size(locs,1)-(sum(logicalIndexes)-1)); % wave that the first action potential following stimulus injection occurs on
 subplot(7,4,[2,6,10]);
-plot(Time,Waves(:,wavenum_first),'color','red'); hold on; plot(Time,Waves(:,11),'color','black')
+plot(Time,Waves(:,wavenum_first)*1000,'color','red'); hold on; plot(Time,Waves(:,11)*1000,'color','black')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
 % pA = [-100:10:190]'; % legacy numbers
@@ -166,9 +191,14 @@ hold on; plot(Time,Waves(:,11)*1000,'color','black'); hold on; plot(Time,Waves(:
 % Calculate Ih Sag
 SS_start = 1.3/Time(2); 
 SS_end = 1.5/Time(2);
+% preallocate for loop variables
+y = zeros(1,11);
+x = zeros(1,11);
+SS_Value = zeros(1,11);
+Ih_Sag_Amp = zeros(1,11);
+Ih_Sag_Percentage = zeros(1,11);
 for i = 1:11
     [y(i),x(i)] = min(Waves(20000:30000,i));
-    x_Time = x(i)*Time(2);
     SS_Value(i) = mean(Waves(SS_start:SS_end,i)) + 0.065;
     Ih_Sag_Amp(i) = ((SS_Value(i) - (y(i)+0.065)))*1000; % Sag amplitude in mV
     Ih_Sag_Percentage(i) = ((SS_Value(i)/y(i)))*100; % Sag percentage
@@ -181,15 +211,14 @@ set(gca,'linewidth',2); set(gcf,'color','white'); xlabel('Current Step (pA)'); y
 %% AP analysis
 
 % plot action potential
-AP_Window = Waves(out(wavenum_first)-500:out(wavenum_first)+500,wavenum_first)*1000;
+AP_Window = Waves(outs(wavenum_first)-500:outs(wavenum_first)+500,wavenum_first)*1000;
 
 % Overshoot in mV
 [Overshoot,ind_o] = max(AP_Window);
 % Afterhyperpolarisation in mV
 [Afterhyperpolarisation,ind_a] = min(AP_Window(ind_o:end));
-% Baseline & Amplitude
+% Baseline
 Base = mean(AP_Window(1:350));
-Amplitude = abs(Base - Overshoot); % in mV
 
 % plot action potential waveform
 subplot(7,4,[20,24,28]); plot(AP_Window, gradient(AP_Window),'linewidth',2,'color','black')
@@ -218,13 +247,18 @@ Halfwidth = (Halfwidth*Time(2))*1000; % Halfwidth in ms
 % Action Potential Threshold
 % as defined by the first peak of the third derivative
 % (or second derivative of dv/dt as per Serkeli et al., 2004)
-[~,thresh_ind,~,~] = findpeaks(gradient(gradient(gradient(AP_Window))),...
-    'MinPeakProminence',0.1, ...
-    'MinPeakWidth',3, ...
-    'NPeaks',1);
-hold on; plot(gradient(gradient(gradient(AP_Window)))*100-20);
-Threshold = AP_Window(thresh_ind); % in mV
-hold on; plot(thresh_ind,Threshold-Base,'Or') % plot threshold
+% what I actually prefer is when the dv/dt surpasses 4mV/ms (dv/dt > 1)
+N = diff(AP_Window(1:ind_o-20)); % period start to just before the peak
+[closestValue, closestIndex] = min(abs(N - 1.'));
+hold on; plot(closestIndex,AP_Window(closestIndex)-Base,'or')
+ind_t = closestIndex; % threshold index
+%hold on; plot(gradient(gradient(gradient(AP_Window)))*100-20);
+% plot the differntial below the trace
+hold on; plot(diff(AP_Window)*1-20);
+hold on; yline(closestValue-20) % threshold (dv/dt)
+Threshold = AP_Window(ind_t); % in mV
+
+%hold on; plot(thresh_ind,Threshold-Base,'Or') % plot threshold
 hold on; plot((ind_a+ind_o),Afterhyperpolarisation-Base,'* y') % plot after
 
 % recalculate (and overwrite) the amplitude now you have a threshold
@@ -232,13 +266,13 @@ Amplitude = abs((Overshoot-Base)-(Threshold-Base)); % in mV
 
 % Depolarisation Rate
 % identify the closest value (and index) to the threshold value after peak
-N = AP_Window(thresh_ind:ind_o)-Base; % period thresh - peak
+N = AP_Window(ind_t:ind_o)-Base; % period thresh - peak
 [~, closestIndex_20] = min(abs(N - 0.2*Amplitude.'));
 [~, closestIndex_80] = min(abs(N - 0.8*Amplitude.'));
 
 % between 20 % and 80 % of the rise phase (based on amplitude, not index)
-rise_20_ind = closestIndex_20 + thresh_ind;
-rise_80_ind = closestIndex_80 + thresh_ind;
+rise_20_ind = closestIndex_20 + ind_t;
+rise_80_ind = closestIndex_80 + ind_t;
 Rise = mean(gradient(AP_Window(rise_20_ind:rise_80_ind)));
 hold on; plot((rise_20_ind:rise_80_ind),AP_Window(rise_20_ind:rise_80_ind)-Base,'linewidth',2)
 
@@ -248,29 +282,18 @@ hold on; plot((rise_20_ind:rise_80_ind),AP_Window(rise_20_ind:rise_80_ind)-Base,
 N = AP_Window(ind_o:ind_o+ind_a)-Base; % period peak - hyper
 [~, closestIndex_20] = min(abs(N - 0.2*Amplitude.'));
 [~, closestIndex_80] = min(abs(N - 0.8*Amplitude.'));
-c = N(closestIndex_80)
+
 % between 20 % and 80 % of the rise phase (based on amplitude, not index)
 fall_20_ind = closestIndex_80 + ind_o;
 fall_80_ind = closestIndex_20 + ind_o;
-Rise = mean(gradient(AP_Window(fall_20_ind:fall_80_ind)));
+Fall = mean(gradient(AP_Window(fall_20_ind:fall_80_ind)));
 hold on; plot((fall_20_ind:fall_80_ind),AP_Window(fall_20_ind:fall_80_ind)-Base,'linewidth',2)
-
-% identify the closest value (and index) to the threshold value after peak
-V = Threshold; % threshold value
-N = AP_Window(ind_o:(ind_o+ind_a)); % period peak - hyperpolarisation
-[minValue, closestIndex] = min(abs(N - V.'));
-closestValue = N(closestIndex);
-
-% between 20 % and 80 % of the falling phase4
-fall_25 = round(0.2*(closestIndex)) + ind_o;
-fall_75 = round(0.8*(closestIndex)) + ind_o;
-Fall = mean(gradient(AP_Window(fall_25:fall_75)));
-hold on; plot((fall_25:fall_75),AP_Window(fall_25:fall_75)-Base,'linewidth',2,'color','red')
 
 legend('trace','peak', ...
     'amplitude','halfwidth', ...
-    'border','dvdt_3', ...
-    'threshold','afterhyp', ...
+    'border','threshold', ...
+    'dv/dt','dv/dt > 1',...
+    'hyperpolar.',...
     'rise','fall',...
     'Location','northeast')
 %% Input Resistance
@@ -306,6 +329,7 @@ hold on; text(0.8,(mean(Waves(IR_start:IR_end,2))*1000) + 3,txt_2)
 %% Bridge Balance adjustments
 % apply necessary bridge balance adjustments if the user requested offline
 
+if istep_run == 0
 % plot the initial current step so user can see if recording was balanced
 t = figure; plot(Time(1:151),Waves(300:450,1)); box off; xlabel('Time (s)');
 title('Initial Current Step [Zoomed]'); set(gca,'linewidth',2); 
@@ -365,54 +389,82 @@ elseif balanced == "No"
     Afterhyperpolarisation = Afterhyperpolarisation-(Vm_adjust(wavenum_first)*1000);
     % peak
     Overshoot = Overshoot-(Vm_adjust(wavenum_first)*1000);
-    
+
 end
-
-
+    elseif istep_run == 1
+    balanced = output.Online_BB_performed;
+    Rs_Init = output.Rs_Init;
+    Vm_adjust = output.Offline_BB;
+    IR = output.IR;
+    Threshold = output.thresh;
+    Afterhyperpolarisation = output.afterhyp;
+    Overshoot = output.peak;
+    offline_BB_performed = output.Offline_BB_performed;
+end
 %% Output
 % What Genotype was the animal?
 dlgTitle    = 'Genotpye';
 dlgQuestion = 'What Genotype was this animal?';
-genotype = questdlg(dlgQuestion,dlgTitle,'APOE3','APOE4','APOE3');
-
+if istep_run == 0
+    genotype = questdlg(dlgQuestion,dlgTitle,'APOE3','APOE4','APOE3');
+elseif istep_run == 1
+    genotype = questdlg(dlgQuestion,dlgTitle,'APOE3','APOE4',(output.genotype));  
+end
 % Was the recording exposed to ketamine?
 dlgTitle    = 'Ketamine';
 dlgQuestion = 'Was this recorded in the presence of ketamine?';
-ketamine = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
+if istep_run == 0
+    ketamine = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
+elseif istep_run == 1
+    ketamine = questdlg(dlgQuestion,dlgTitle,'Yes','No',(output.ketamine));
+end
 
-% What was the slice ID?
-prompt = {'What was the slice ID for this recording?'};
-dlgtitle = 'Slice ID';
-definput = {'eg. E420211203#1'};
+% What was the slice ID, and  add any notes?
+prompt = {'What was the slice ID for this recording?','Would you like to add any notes?'};
+dlgtitle = 'Slice ID & notes';
+if istep_run == 0
+    definput = {'eg. E420211203#1','eg. dodgy input'};
+elseif istep_run == 1
+    definput = {char(output.ID),char(output.Notes)};
+end
 dims = [1 40];
-slice_id = inputdlg(prompt,dlgtitle,dims,definput);
+slice_id_notes = inputdlg(prompt,dlgtitle,dims,definput);
+
+
+% Would you like to add any notes? 
+% prompt = {'Would you like to add any notes'};
+% dlgtitle = 'Notes';
+% definput = {'eg. dodgy input'};
+% dims = [1 40];
+% notes = inputdlg(prompt,dlgtitle,dims,definput);
 
 % create output structure
-out.genotype = genotype;
-out.ketamine = ketamine;
-out.filepath = path;
-out.ID = slice_id;
-out.steps = pA;
-out.waveform = pA_waveform;
-out.time = Time;
-out.waves = Waves;
-out.ephysIO = S;
-out.numSpikes = numSpikes;
-out.Rh = Rh;
-out.sag_mV = Ih_Sag_Amp;
-out.sag_ratio = Ih_Sag_Percentage;
-out.peak = Overshoot;
-out.afterhyp = Afterhyperpolarisation;
-out.amp = Amplitude;
-out.thresh = Threshold;
-out.half = Halfwidth;
-out.rise = Rise;
-out.fall = Fall;
-out.IR = IR;
-out.Rs_Init = Rs_Init;
-out.Offline_BB = Vm_adjust;
-out.Online_BB_performed = balanced;
-out.Offline_BB_performed = offline_BB_performed;
+output.genotype = genotype;
+output.ketamine = ketamine;
+output.filepath = path;
+output.ID = slice_id_notes(1);
+output.steps = pA;
+output.waveform = pA_waveform;
+output.time = Time;
+output.waves = Waves;
+output.ephysIO = S;
+output.numSpikes = numSpikes;
+output.Rh = Rh;
+output.sag_mV = Ih_Sag_Amp;
+output.sag_ratio = Ih_Sag_Percentage;
+output.peak = Overshoot;
+output.afterhyp = Afterhyperpolarisation;
+output.amp = Amplitude;
+output.thresh = Threshold;
+output.half = Halfwidth;
+output.rise = Rise;
+output.fall = Fall;
+output.IR = IR;
+output.Rs_Init = Rs_Init;
+output.Offline_BB = Vm_adjust;
+output.Online_BB_performed = balanced;
+output.Offline_BB_performed = offline_BB_performed;
+output.Notes = slice_id_notes(2);
 
 % navigate to root dir
 cd(path)
