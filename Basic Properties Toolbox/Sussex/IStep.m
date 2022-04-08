@@ -93,9 +93,13 @@ end
 warning('off','signal:findpeaks:largeMinPeakHeight');
 pks = cell(size(Waves,2),1);
 locs = cell(size(Waves,2),1);
+difflocs = cell(size(Waves,2),1); % difference between loc in dp
+normlocs = cell(size(Waves,2),1); % difference between loc in dp
 w = cell(size(Waves,2),1);
 p = cell(size(Waves,2),1);
 numSpikes = zeros(size(Waves,2),1);
+nlocs = cell(size(Waves,2),1); % interval index
+
 
 % findpeaks to determine number and location of AP's per wave
 for i = 1:size(Waves,2)
@@ -109,8 +113,24 @@ for i = 1:size(Waves,2)
         'MinPeakDistance',0.02*10^4,...
         'WidthReference','halfheight');
     numSpikes(i) = size(pks{i},1);
+    difflocs{i} = diff(locs{i}); % difference between loc in dp
+    normlocs{i} = normalize(difflocs{i},'scale','first'); % difflocs norm to first value
+    nlocs{i} = 1:size(difflocs{i}); % interval index
 end
 
+
+interval_index = [];
+normalised_interval = [];
+for i = 1:size(nlocs,1)
+    interval_index = [interval_index,nlocs{i}];
+    normalised_interval = [normalised_interval,normlocs{i}'];
+end
+[p,S] = polyfit(interval_index,normalised_interval,1); % coefficients of first degree polynomial
+[y_fit,delta] = polyval(p,interval_index,S); % fit the polynomial and error
+box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+xlabel('AP Interval #'); ylabel('Normalised Inter Event Interval')
+
+figure; 
 % plot whole of current step protocol
 fh = figure();
 fh.WindowState = 'maximized'; subplot(7,4,[1,5]); plot(Time,Waves*1000,'color','black')
@@ -155,6 +175,7 @@ pA = linspace(-200,400,size(Waves,2))';
 lgd = legend(char(string(pA(wavenum_first))),char(string(pA(11))),'linewidth',1);
 title(lgd,'Current (pA)')
 title('Exemplary Waves')
+
 %% Membrane Excitability and Rheobase
 % determine rheobase as the first amount of current to induce APs in the
 % first 25% of the current step rather than the first current step value to
