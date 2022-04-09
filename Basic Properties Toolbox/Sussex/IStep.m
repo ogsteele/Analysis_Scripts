@@ -109,6 +109,7 @@ for i = 1:size(Waves,2)
     % p = prominence
     [pks{i},locs{i},w{i},p{i}] = findpeaks(Waves(:,i),...
         'MinPeakHeight',0,...
+        'MinPeakProminence',0.01,...
         'MaxPeakWidth',0.02*10^4,...
         'MinPeakDistance',0.02*10^4,...
         'WidthReference','halfheight');
@@ -119,18 +120,24 @@ for i = 1:size(Waves,2)
 end
 
 
-interval_index = [];
-normalised_interval = [];
-for i = 1:size(nlocs,1)
-    interval_index = [interval_index,nlocs{i}];
-    normalised_interval = [normalised_interval,normlocs{i}'];
-end
-[p,S] = polyfit(interval_index,normalised_interval,1); % coefficients of first degree polynomial
-[y_fit,delta] = polyval(p,interval_index,S); % fit the polynomial and error
-box off; set(gcf,'color','white'); set(gca,'linewidth',2)
-xlabel('AP Interval #'); ylabel('Normalised Inter Event Interval')
+% interval_index = [];
+% normalised_interval = [];
+% for i = 1:size(nlocs,1)
+%     interval_index = [interval_index,nlocs{i}];
+%     normalised_interval = [normalised_interval,normlocs{i}'];
+% end
+% [p,S] = polyfit(interval_index,normalised_interval,1); % coefficients of first degree polynomial
+% [y_fit,delta] = polyval(p,interval_index,S); % fit the polynomial and error
+% figure; plot(interval_index,normalised_interval,'bo')
+% hold on
+% plot(interval_index,y_fit,'r-')
+% plot(interval_index,y_fit+2*delta,'m--',interval_index,y_fit-2*delta,'m--')
+% title('Linear Fit of Data with 95% Prediction Interval')
+% legend('Data','Linear Fit','95% Prediction Interval')
+% box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+% xlabel('AP Interval #'); ylabel('Normalised Inter Event Interval')
 
-figure; 
+
 % plot whole of current step protocol
 fh = figure();
 fh.WindowState = 'maximized'; subplot(7,4,[1,5]); plot(Time,Waves*1000,'color','black')
