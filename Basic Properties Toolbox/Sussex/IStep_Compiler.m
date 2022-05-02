@@ -4,6 +4,7 @@
 mem_tog = 0;
 exc_tog = 1;
 iei_tog = 1;
+rh_tog = 0;
 
 %% Code
 
@@ -139,6 +140,7 @@ end
 E3C_aveSpikes = mean([E3_control.numSpikes],2); % mean number of spikes per I
 x = [E3_control.numSpikes];
 for i = 1:size(x,1)
+    E3C_aveSpikesSTD(i) = std(x(i,:));
 E3C_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
 end
 
@@ -149,6 +151,7 @@ end
 E3K_aveSpikes = mean([E3_ketamine.numSpikes],2); % mean number of spikes per I
 x = [E3_ketamine.numSpikes];
 for i = 1:size(x,1)
+    E3K_aveSpikesSTD(i) = std(x(i,:));
 E3K_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
 end
 
@@ -159,6 +162,7 @@ end
 E4C_aveSpikes = mean([E4_control.numSpikes],2); % mean number of spikes per I
 x = [E4_control.numSpikes];
 for i = 1:size(x,1)
+    E4C_aveSpikesSTD(i) = std(x(i,:));
 E4C_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
 end
 
@@ -169,6 +173,7 @@ end
 E4K_aveSpikes = mean([E4_ketamine.numSpikes],2); % mean number of spikes per I
 x = [E4_ketamine.numSpikes];
 for i = 1:size(x,1)
+    E4K_aveSpikesSTD(i) = std(x(i,:));
 E4K_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
 end
 
@@ -341,18 +346,40 @@ pA_step = zeros(size(compiled,2),6);
 init_interval = zeros(size(compiled,2),6);
 pA = [-200;-180;-160;-140;-120;-100;-80;-60;-40;-20;0;20;40;60;80;100;120;140;160;180;200;220;240;260;280;300;320;340;360;380;400];
 for j = 1:6
-for i = 1:size(compiled,2)
-wave_ind(i,j) = (find(~cellfun(@isempty,compiled(i).difflocs),1))+j-1; % first wave with 2x AP
-pA_step(i,j) = pA(wave_ind(i,j)); % current step for the first wave with two APs
-temp = compiled(i,j).difflocs{wave_ind(i)}; % holding var of the first val
-init_interval(i,j) = temp(1); % the initial interval across all conditions
-end
+    for i = 1:size(compiled,2)
+        temp = [];
+        wave_ind(i,j) = (find(~cellfun(@isempty,compiled(i).difflocs),1))+(j-1); % first wave with 2x AP
+        pA_step(i,j) = pA(wave_ind(i,j)); % current step for the first wave with two APs
+        temp = compiled(i).difflocs{wave_ind(i,j)}; % holding var of the first val
+        if isempty(temp) == 1
+            init_interval(i,j) = NaN;
+        else
+            init_interval(i,j) = temp(1); % the initial interval across all conditions
+        end
+    end
 end
 
+%% Rheobase Plot
+if rh_tog == 1
+Y = padcat([E3_control.Rh]',[E3_ketamine.Rh]',[E4_control.Rh]',[E4_ketamine.Rh]');
+b = boxplot(Y,...
+        'labels',labels);
+box off; set(gca,'linewidth',2); set(gcf,'color','white');
+set(b(7,:),'Visible','off') % make the outlier points invisible
+x=repmat(1:4,length(Y),1);
+hold on
+% plot individual values
+for i = 1:size(Y,2)
+    scatter(x(:,i),Y(:,i),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',colorscheme(i,:));
+end
+xlabel('Condition'); ylabel('Rheobase (pA)');
+else
+    disp('rh_tog == 0')
+end
 
 %% Save Variables
-save('compiled.mat', 'compiled', '-v7.3')
-save conditions.mat E3_ketamine E3_control E4_ketamine E4_control
+%save('compiled.mat', 'compiled', '-v7.3')
+%save conditions.mat E3_ketamine E3_control E4_ketamine E4_control
 %clearvars -except compiled E3_ketamine E3_control E4_ketamine E4_control
 %load compiled.mat
 

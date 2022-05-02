@@ -211,7 +211,7 @@ close
 
 % create pulse paramaters from ginput selection
 Param.pulse_start = round(x);
-Param.pulse_end = Param.pulse_start + Param.pulse_points;                                     % note, this will only cover the downward transiet, not the upward transient
+Param.pulse_end = Param.pulse_start + Param.pulse_points; % note, this will only cover the downward transiet, not the upward transient
 Param.pulse_window = Param.pulse_start:Param.pulse_end;
 
 % plot first and last window used to calculate wcp parameters

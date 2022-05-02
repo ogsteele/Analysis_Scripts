@@ -1,4 +1,4 @@
-function [output] = IStep
+function [output] = IStep_K
 %% About
 %@OGSteele, 2022
 
@@ -285,6 +285,9 @@ ind_t = closestIndex; % threshold index
 hold on; plot(diff(AP_Window)*1-20);
 hold on; yline(closestValue-20) % threshold (dv/dt)
 Threshold = AP_Window(ind_t); % in mV
+
+% PennThresh
+% peak of the first derivative
 
 %hold on; plot(thresh_ind,Threshold-Base,'Or') % plot threshold
 hold on; plot((ind_a+ind_o),Afterhyperpolarisation-Base,'* y') % plot after
