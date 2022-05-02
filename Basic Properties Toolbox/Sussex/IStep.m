@@ -1,4 +1,4 @@
-function [output] = IStep(S,clampfile)
+function [output] = IStep(S, clampfile, steps)
 %% Decription
 % Current step protocol analysis, featuring user defined input at various
 % points
@@ -7,9 +7,10 @@ function [output] = IStep(S,clampfile)
 
 % example use
 %       [file,path] = uigetfile('*.ma');
-%       clampfile = fullfile(path,file));
+%       clampfile = fullfile(path,file);
 %       S = ephysIO(clampfile);
-%       output = IStep(S,clampfile);
+%       steps = [-200,400];
+%       output = IStep(S,clampfile,steps);
 
 
 % input
@@ -17,6 +18,7 @@ function [output] = IStep(S,clampfile)
 %       in a current step sequence, assuming the the rest are in the same
 %       directory structure
 %       clampfile = full file path of S
+%       steps = [min,max] pA step vals
 
 
 % output 
@@ -58,22 +60,16 @@ function [output] = IStep(S,clampfile)
     % afterhyp
     % peak
 
-% example use
-% [file,path] = uigetfile('*.ma');
-% clampfile = fullfile(path,file));
-% S = ephysIO(clampfile);
-% output = IStep(S);
-
 %% Code
 
 % load file of interest
-[file,path] = uigetfile('*.ma');
-S = ephysIO(fullfile(path,file));
+%[file,path] = uigetfile('*.ma');
+%S = ephysIO(fullfile(path,file));
 Time = S.array(:,1);
 Waves = S.array(:,2:end);
 
 % cd to path
-splitPath = split(path,filesep);
+splitPath = split(clampfile,filesep);
 newPath = char(string(join(splitPath(1:end-3),"\")));
 cd(newPath)
 
@@ -87,7 +83,7 @@ try
     fileFlags = [list.isfile];
     list = list(fileFlags); % save only the ones we're interested in
     istep_run = 1;
-    ('IStep run detected, running with extracted settings as defaults')
+    warning('IStep run detected, running with extracted settings as defaults');
     load(list.name)
 catch
     warning('Assuming IStep has not been run, running IStep normally');
@@ -146,25 +142,6 @@ for i = 1:size(Waves,2)
     nlocs{i} = 1:size(difflocs{i}); % interval index
 end
 
-
-% interval_index = [];
-% normalised_interval = [];
-% for i = 1:size(nlocs,1)
-%     interval_index = [interval_index,nlocs{i}];
-%     normalised_interval = [normalised_interval,normlocs{i}'];
-% end
-% [p,S] = polyfit(interval_index,normalised_interval,1); % coefficients of first degree polynomial
-% [y_fit,delta] = polyval(p,interval_index,S); % fit the polynomial and error
-% figure; plot(interval_index,normalised_interval,'bo')
-% hold on
-% plot(interval_index,y_fit,'r-')
-% plot(interval_index,y_fit+2*delta,'m--',interval_index,y_fit-2*delta,'m--')
-% title('Linear Fit of Data with 95% Prediction Interval')
-% legend('Data','Linear Fit','95% Prediction Interval')
-% box off; set(gcf,'color','white'); set(gca,'linewidth',2)
-% xlabel('AP Interval #'); ylabel('Normalised Inter Event Interval')
-
-
 % plot whole of current step protocol
 fh = figure();
 fh.WindowState = 'maximized'; subplot(7,4,[1,5]); plot(Time,Waves*1000,'color','black')
@@ -177,7 +154,7 @@ ax = gca; xax = ax.XAxis; set(xax,'visible','off')
 % plot the waveform of interest
 wavelength = Time(end);
 Hz = size(S.array,1)/wavelength;
-pA = linspace(-200,400,size(Waves,2))';
+pA = linspace(steps(1),steps(2),size(Waves,2))';
 pA_waveform = zeros(size(Waves,1),size(Waves,2)); 
 pA_waveform(round(0.01*Hz):round(0.06*Hz),:) = -60; % initial test pulse
 for i = 1:size(pA,1)
@@ -185,7 +162,7 @@ for i = 1:size(pA,1)
 end
 subplot(7,4,9); plot(Time,pA_waveform(:,:),'linewidth',1,'color','black')
 box off; set(gca,'linewidth',2); set(gcf,'color','white');
-xlabel('Time (s)'); ylabel('Command(pA)'); ylim([-250 300])
+xlabel('Time (s)'); ylabel('Command(pA)'); ylim([(steps(1)-50),(steps(2)+50)])
 ax = gca; yax = ax.YAxis; set(yax,'TickDirection','out')
 
 % determine rheobase as the first amount of current to induce APs in the
@@ -203,8 +180,6 @@ subplot(7,4,[2,6,10]);
 plot(Time,Waves(:,wavenum_first)*1000,'color','red'); hold on; plot(Time,Waves(:,11)*1000,'color','black')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
-% pA = [-100:10:190]'; % legacy numbers
-pA = linspace(-200,400,size(Waves,2))';
 
 lgd = legend(char(string(pA(wavenum_first))),char(string(pA(11))),'linewidth',1);
 title(lgd,'Current (pA)')
@@ -312,9 +287,6 @@ ind_t = closestIndex; % threshold index
 hold on; plot(diff(AP_Window)*1-20);
 hold on; yline(closestValue-20) % threshold (dv/dt)
 Threshold = AP_Window(ind_t); % in mV
-
-% PennThresh
-% peak of the first derivative
 
 %hold on; plot(thresh_ind,Threshold-Base,'Or') % plot threshold
 hold on; plot((ind_a+ind_o),Afterhyperpolarisation-Base,'* y') % plot after
@@ -525,7 +497,7 @@ output.Offline_BB_performed = offline_BB_performed;
 output.Notes = slice_id_notes(2);
 
 % navigate to root dir
-cd(path)
+cd(newPath)
 cd ..\..
 
 % save output

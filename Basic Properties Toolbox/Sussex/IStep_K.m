@@ -60,7 +60,7 @@ try
     fileFlags = [list.isfile];
     list = list(fileFlags); % save only the ones we're interested in
     istep_run = 1;
-    ('IStep run detected, running with extracted settings as defaults')
+    warning('IStep run detected, running with extracted settings as defaults');
     load(list.name)
 catch
     warning('Assuming IStep has not been run, running IStep normally');
@@ -158,7 +158,7 @@ for i = 1:size(pA,1)
 end
 subplot(7,4,9); plot(Time,pA_waveform(:,:),'linewidth',1,'color','black')
 box off; set(gca,'linewidth',2); set(gcf,'color','white');
-xlabel('Time (s)'); ylabel('Command(pA)'); ylim([-250 300])
+xlabel('Time (s)'); ylabel('Command(pA)'); ylim([-250 450])
 ax = gca; yax = ax.YAxis; set(yax,'TickDirection','out')
 
 % determine rheobase as the first amount of current to induce APs in the
