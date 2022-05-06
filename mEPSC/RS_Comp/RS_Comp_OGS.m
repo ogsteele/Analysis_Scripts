@@ -213,6 +213,24 @@ close
 Param.pulse_start = round(x);
 Param.pulse_end = Param.pulse_start + Param.pulse_points; % note, this will only cover the downward transiet, not the upward transient
 Param.pulse_window = Param.pulse_start:Param.pulse_end;
+pulsewin = S.array(Param.pulse_window,2);
+
+% positive or negative pulse
+% Was the recording exposed to LPS/PBS?
+%dlgTitle    = 'Upward or downward deflection';
+%dlgQuestion = 'Which deflection, upward or downward, was selected?';
+%if istep_run == 0
+%   condition = questdlg(dlgQuestion,dlgTitle,'LPS (Test)','PBS (Control)','PBS (Control');
+%elseif istep_run == 1
+%   condition = questdlg(dlgQuestion,dlgTitle,'LPS (Test)','PBS (Control)',(output.condition));
+%end
+
+if pulsewin(1) > pulsewin(end)
+    pulsedir = 'Negative';
+elseif abs(pulsewin(1)) > abs(pulsewin(end))
+    pulsedir = 'Positive';
+end
+
 
 % plot first and last window used to calculate wcp parameters
 % figure; plot(splits(Param.pulse_window,1))
@@ -450,8 +468,7 @@ end
 disp('Recording compensated and saved')
 %% Define Functions
 
-
-function y = rscomp (y, sampInt, fraction, R_s, C_m, V_hold, V_rev)
+function y = rscomp(y, sampInt, fraction, R_s, C_m, V_hold, V_rev)
 
 % Function for offline series resistance compensation
 
@@ -510,15 +527,6 @@ end
 y = y * 1e12;
 
 end
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
 
 function out = WCP(data,parameters)
 %     input arguements:
@@ -616,14 +624,6 @@ out.Q = Q; % charge in C
 
 end
 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
 function [tprm,med,x,x2] = TestPulse_rm(data,parameters)
 
 % remove test pulse and plot without
@@ -652,12 +652,6 @@ x2 = linspace(0,(size(tprm_splits_conc,1)/parameters.sample_rate),size(median_YF
 tprm = YF;
 med = median_YF;
 end
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 function [splits, nf_splits] = TP_null_MedianF_function(Param,splits,x,poles)
 

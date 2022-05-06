@@ -35,7 +35,7 @@ function [output] = IStep(S, clampfile, steps)
 %       numSpikes - number of spikes per wave
 %       Rh - Rheobase in pA
 %       sag_mV - Ih Sag Amplitude in mV
-%       sag_ratio - Ih Sag : steady state rati
+%       sag_ratio - Ih Sag : steady state ratio
 %       peak - Overshoot in mV
 %       afterhyp - Afterhyperpolarisation value in mV
 %       amp - Action potential amplitude in mV
