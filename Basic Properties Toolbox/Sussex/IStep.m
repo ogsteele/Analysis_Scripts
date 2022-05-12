@@ -44,6 +44,7 @@ function [output] = IStep(S, clampfile, steps)
 %       rise - Depolarisation rate in mV/s
 %       fall - Repolarisation rate in mV/s
 %       IR - Input Resistance in MOhm
+%       Vm - sub action potential Vm
 %       Rs_Init - Access resistance approximated from initial step  in MOhm
 %       Offline_BB - Vm adjustments for offline bridge balance in V
 %       Online_BB_performed = Yes/No 
@@ -59,6 +60,14 @@ function [output] = IStep(S, clampfile, steps)
     % thresh
     % afterhyp
     % peak
+
+%% To include 
+% list of stuff to implement in the future
+
+% average Vm at each sub AP current step
+
+% every action potential detail
+
 
 %% Code
 
@@ -174,7 +183,7 @@ C = locs;
 idx = ~cellfun('isempty',C);
 outs = zeros(size(C));
 outs(idx) = cellfun(@(v)v(1),C(idx));
-logicalIndexes =  outs< 27500 & outs > 1;
+logicalIndexes =  outs < 27500 & outs > 1;
 wavenum_first = (size(locs,1)-(sum(logicalIndexes)-1)); % wave that the first action potential following stimulus injection occurs on
 subplot(7,4,[2,6,10]);
 plot(Time,Waves(:,wavenum_first)*1000,'color','red'); hold on; plot(Time,Waves(:,11)*1000,'color','black')
@@ -326,6 +335,8 @@ legend('trace','peak', ...
     'hyperpolar.',...
     'rise','fall',...
     'Location','northeast')
+
+
 %% Input Resistance
 % Calculates input resistance in MOhm from the difference in voltage, divided by
 % the current applied, to the the steady state potentials on the last two
@@ -355,6 +366,37 @@ txt_1 = '\bf Input Resistance: ';
 txt_2 = [num2str(IR) ' M\Omega \rightarrow'];
 hold on; text(0.7,(mean(Waves(IR_start:IR_end,2))*1000) + 5,txt_1)
 hold on; text(0.8,(mean(Waves(IR_start:IR_end,2))*1000) + 3,txt_2)
+
+%% Sub-AP Vm values
+Vm_start = 1/Time(2); 
+Vm_end = 1.5/Time(2);
+
+C = locs;
+idx = ~cellfun('isempty',C);
+outs = zeros(size(C));
+outs(idx) = cellfun(@(v)v(1),C(idx));
+logicalIndexes =  outs > 1;
+wavenum_first = (size(locs,1)-(sum(logicalIndexes)-1)); % wave that the first action potential following stimulus injection occurs on
+subAP_Vm = mean(Waves(Vm_start:Vm_end,1:wavenum_first-1));
+
+
+% plot the subAP_Vm values
+figure; subplot(1,2,1)
+plot(Time,Waves(:,1),'color','black'); hold on
+plot(Time,Waves(:,2:wavenum_first-1),'color','black','HandleVisibility','off')
+xline(1,'--r'); xline(1.5,'--r','HandleVisibility','off')
+plot(1.25,subAP_Vm(1),'ob')
+for i = 2:size(subAP_Vm,2)
+hold on; plot(1.25,subAP_Vm(i),'ob','HandleVisibility','off'); hold off
+end
+box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+legend('Waves','Averaged Period','Average Vm','linewidth',1,'autoupdate','off','location','southeast')
+xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
+
+subplot(1,2,2); plot(pA(1:wavenum_first-1),subAP_Vm,'-o','color','blue','linewidth',3)
+box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+xlabel('Current Step (pA)'); ylabel('Membrane Potential (mV)');
+
 
 %% Bridge Balance adjustments
 % apply necessary bridge balance adjustments if the user requested offline
@@ -490,6 +532,7 @@ output.half = Halfwidth;
 output.rise = Rise;
 output.fall = Fall;
 output.IR = IR;
+output.Vm = subAP_Vm;
 output.Rs_Init = Rs_Init;
 output.Offline_BB = Vm_adjust;
 output.Online_BB_performed = balanced;
