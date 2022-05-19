@@ -82,44 +82,25 @@ splitPath = split(clampfile,filesep);
 newPath = char(string(join(splitPath(1:end-3),"\")));
 cd(newPath)
 
-% check to see if I_step has already been run
-try
-    list = dir('**\*.mat'); % ending in .mat
-    pat = 'CC_IV_1_full_';
-    for i = 1:size(list,1)
-        list(i).isfile = startsWith(list(i).name,pat); % is it one of ours?
-    end
-    fileFlags = [list.isfile];
-    list = list(fileFlags); % save only the ones we're interested in
-    istep_run = 1;
-    warning('IStep run detected, running with extracted settings as defaults');
-    load(list.name)
-catch
-    warning('Assuming IStep has not been run, running IStep normally');
-    istep_run = 0;
-end
+%% run analysis or not?
+% gives the user the option to abort if the data looks horrendous
 
-% run analysis or not?
-if istep_run == 0
-    % plot figure
-    fh = figure();
-    plot(Time,Waves*1000,'color','black')
-    box off; set(gcf,'color','white'); set(gca,'linewidth',2)
-    ylabel('Membrane Potential (mV)'); xlabel('Time (s)')
-    title('Current Step Waveform')
-    
-    % ask the user 
-    dlgTitle    = 'Run Analysis';
-    dlgQuestion = 'Would you like to run the Current Step Analysis?';
-    run = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
-    
-    close(fh) % close figure
-elseif istep_run == 1
-    run = "Yes";
-end
-    % establish if statement for protocol
-    if run == "Yes"
-        disp('Performing Analysis, please wait ...')
+% plot overall figure
+fh = figure();
+plot(Time,Waves*1000,'color','black')
+box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+ylabel('Membrane Potential (mV)'); xlabel('Time (s)')
+title('Current Step Waveform')
+
+% ask the user 
+dlgTitle    = 'Run Analysis';
+dlgQuestion = 'Would you like to run the Current Step Analysis?';
+run = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
+
+close(fh) % close figure
+
+if run == "Yes"
+    disp('Performing Analysis, please wait ...')
 
 % preallocate pks, locs, w, p, numSpikes and mute error here
 warning('off','signal:findpeaks:largeMinPeakHeight');
@@ -401,7 +382,6 @@ xlabel('Current Step (pA)'); ylabel('Membrane Potential (mV)');
 %% Bridge Balance adjustments
 % apply necessary bridge balance adjustments if the user requested offline
 
-if istep_run == 0
 % plot the initial current step so user can see if recording was balanced
 t = figure; plot(Time(1:151),Waves(300:450,1)); box off; xlabel('Time (s)');
 title('Initial Current Step [Zoomed]'); set(gca,'linewidth',2); 
@@ -462,16 +442,6 @@ elseif balanced == "No"
     % peak
     Overshoot = Overshoot-(Vm_adjust(wavenum_first)*1000);
 
-end
-    elseif istep_run == 1
-    balanced = output.Online_BB_performed;
-    Rs_Init = output.Rs_Init;
-    Vm_adjust = output.Offline_BB;
-    IR = output.IR;
-    Threshold = output.thresh;
-    Afterhyperpolarisation = output.afterhyp;
-    Overshoot = output.peak;
-    offline_BB_performed = output.Offline_BB_performed;
 end
 %% Output
 % What Genotype was the animal?
