@@ -441,50 +441,21 @@ elseif balanced == "No"
     Afterhyperpolarisation = Afterhyperpolarisation-(Vm_adjust(wavenum_first)*1000);
     % peak
     Overshoot = Overshoot-(Vm_adjust(wavenum_first)*1000);
+    % subAP_Vm 
+    subAP_Vm = subAP_Vm-(Vm_adjust(1:size(subAP_Vm,2)));
 
 end
 %% Output
-% What Genotype was the animal?
-dlgTitle    = 'Genotpye';
-dlgQuestion = 'What Genotype was this animal?';
-if istep_run == 0
-    genotype = questdlg(dlgQuestion,dlgTitle,'APOE3','APOE4','APOE3');
-elseif istep_run == 1
-    genotype = questdlg(dlgQuestion,dlgTitle,'APOE3','APOE4',(output.genotype));  
-end
-% Was the recording exposed to LPS/PBS?
-dlgTitle    = 'Condition';
-dlgQuestion = 'Which condition was used to generate this data?';
-if istep_run == 0
-    condition = questdlg(dlgQuestion,dlgTitle,'LPS (Test)','PBS (Control)','PBS (Control');
-elseif istep_run == 1
-    condition = questdlg(dlgQuestion,dlgTitle,'LPS (Test)','PBS (Control)',(output.condition));
-end
-
-% What was the slice ID, and  add any notes?
-prompt = {'What was the slice ID for this recording?','Would you like to add any notes?'};
-dlgtitle = 'Slice ID & notes';
-if istep_run == 0
-    definput = {'eg. E420211203#1','eg. dodgy input'};
-elseif istep_run == 1
-    definput = {char(output.ID),char(output.Notes)};
-end
-dims = [1 40];
-slice_id_notes = inputdlg(prompt,dlgtitle,dims,definput);
-
 
 % Would you like to add any notes? 
-% prompt = {'Would you like to add any notes'};
-% dlgtitle = 'Notes';
-% definput = {'eg. dodgy input'};
-% dims = [1 40];
-% notes = inputdlg(prompt,dlgtitle,dims,definput);
+prompt = {'Would you like to add any notes'};
+dlgtitle = 'Notes';
+definput = {'eg. dodgy input'};
+dims = [1 40];
+notes = inputdlg(prompt,dlgtitle,dims,definput);
 
 % create output structure
-output.genotype = genotype;
-output.condition = condition;
 output.filepath = path;
-output.ID = slice_id_notes(1);
 output.steps = pA;
 output.waveform = pA_waveform;
 output.time = Time;
@@ -503,11 +474,10 @@ output.rise = Rise;
 output.fall = Fall;
 output.IR = IR;
 output.Vm = subAP_Vm;
-output.Rs_Init = Rs_Init;
 output.Offline_BB = Vm_adjust;
 output.Online_BB_performed = balanced;
 output.Offline_BB_performed = offline_BB_performed;
-output.Notes = slice_id_notes(2);
+output.Notes = notes;
 
 % navigate to root dir
 cd(newPath)
@@ -516,8 +486,8 @@ cd ..\..
 % save output
 outname = split(strtrim(path),filesep);
 outname = char(string(outname(end-2)));
-saveas(fh,[outname,'.fig']);
-save([outname,'.mat'],'output')
+%saveas(fh,[outname,'.fig']);
+%save([outname,'.mat'],'output')
 
 % return to if loop from the top 
     else
