@@ -1,0 +1,8 @@
+.:
+    ('Clamp1', 'Pulse_amplitude'): 28
+    dirType: 'Protocol'
+    startTime: 1653728308.2974741
+    __timestamp__: 1653728181.914
+Clamp1.ma:
+    __timestamp__: 1653728308.948
+    __object_type__: 'MetaArray'
