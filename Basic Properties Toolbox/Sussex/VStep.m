@@ -41,6 +41,7 @@ N = 10;
 % create output structure
 % save figures
 % calculate actual ENa in our experiments
+
 %% Organise data and plot
 
 % Split into time and waves
@@ -92,34 +93,81 @@ if run == "Yes"
         subpath = "N/A";
     end
     
+    % create wavelength and Hz variables for ease later
+    wavelength = Time(end);
+    Hz = size(S.array,1)/wavelength;
+    
+    
     %% Set cursors
-    % NaA start and finish
-    a1 = 2010;
-    a2 = 2310;
-    % K start and finish
+    % NaA start and finish (variable)
+    f = figure;
+    plot(Time,Waves,'color','black')
+    box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+    ylabel('Amplitude (A)');
+    title('Voltage Step Waveform')
+    title('highlight the initial sodium spikes')
+    [A,~] = ginput(2);
+    xline(A(1),'--b','linewidth',1,'HandleVisibility','off')
+    xline(A(2),'--b','HandleVisibility','off','linewidth',1)
+    % K start and finish (consistent)
     k1 = 7990;
     k2 = 9980;
-    % NaI start and finish
+    % NaI start and finish (consistent)
     i1 = 10005;
     i2 = 10505;
+    close(gcf) % close the figure
+    
+    %% Plot the trace   
+    % plot the overall wave above the waveform
+    figure;
+    subplot(5,1,[1:3])
+    plot(Time,Waves*1000,'color','black','HandleVisibility', 'off')
+    box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+    ylabel('Amplitude (A)');
+    title('Voltage Step Waveform')
+    ax = gca; xax = ax.XAxis; set(xax,'visible','off')
+    
+    % plot the regions onto the waveform
+    xline(A(1),'--b'); xline(A(2),'--b','HandleVisibility','off');
+    xline(i1/Hz,'--g'); xline(i2/Hz,'--g','HandleVisibility','off');
+    xline(k1/Hz,'--r'); xline(k2/Hz,'--r','HandleVisibility','off');
+    legend('NaA','K','NaI','linewidth',1)
+    
+    %% plot the waveform 
+    Vm = linspace(steps(1),steps(2),size(Waves,2))';
+    Vm_waveform = zeros(size(Waves,1),size(Waves,2)) + holding; % sets the flat line at -65 mV (the holding potential) 
+    for i = 1:size(Vm,1)
+        Vm_waveform(round(0.05*Hz):round(0.25*Hz),i) = Vm(i); % sets the steps
+        Vm_waveform(round(0.251*Hz):round(0.35*Hz),i) = 0;
+    end
+    subplot(5,1,[4,5]); plot(Time,Vm_waveform(:,:),'linewidth',1,'color','black')
+    box off; set(gca,'linewidth',2); set(gcf,'color','white');
+    xlabel('Time (s)'); ylabel('Membrane Potential (mV)'); ylim([(steps(1)-50),(steps(2)+50)])
+    ax = gca; yax = ax.YAxis; set(yax,'TickDirection','out')
+    sgtitle('Waveform')
+    
+    % plot the regions onto the waveform
+    xline(A(1),'--b'); xline(A(2),'--b','HandleVisibility','off');
+    xline(i1/Hz,'--g'); xline(i2/Hz,'--g','HandleVisibility','off');
+    xline(k1/Hz,'--r'); xline(k2/Hz,'--r','HandleVisibility','off');
+    
     %% Na Activation values
     figure; 
     subplot(1,2,1)
-    plot(Time(2000:2500),Waves(2000:2500,:),'color','black','HandleVisibility','off')
-    xlim([0.05 0.06])
-    wavelength = Time(end);
-    Hz = size(S.array,1)/wavelength;
-    xline(a1/Hz,'--b'); xline(a2/Hz,'--b','HandleVisibility','off');
+    plot(...
+        Time((round((A(1)*Hz)-100)):(round((A(2)*Hz)+100))),...
+        Waves((round((A(1)*Hz)-100)):(round((A(2)*Hz)+100)),:),...
+        'color','black','HandleVisibility','off')
+    xline(A(1),'--b'); xline(A(2),'--b','HandleVisibility','off');
     for i = 1:size(Waves,2)
-        [NaApeakval(i),ind(i)] = min(Waves(a1:a2,i));
-        hold on; plot((ind(i)+a1)/Hz,NaApeakval(i),'ob'); hold off
+        [NaApeakval(i),ind(i)] = min(Waves(A(1)*Hz:A(2)*Hz,i));
+        hold on; plot((ind(i)+A(1)*Hz)/Hz,NaApeakval(i),'ob'); hold off
     end
     ylabel('Amplitude (A)'); xlabel('Time (s)');
     set(gca,'linewidth',2); set(gcf,'color','white'); box off
     legend('Analysis Region','Peak Amplitude','linewidth',1,'location','southeast')
     
     subplot(1,2,2)
-    Vm = linspace(steps(1),steps(2),size(Waves,2))';
     plot(Vm,NaApeakval,'-ob')
     ylabel('Amplitude (A)'); xlabel('Membrane Potential (Vm)');
     set(gca,'linewidth',2); set(gcf,'color','white'); box off
@@ -194,39 +242,13 @@ if run == "Yes"
     % plot
     figure; plot(Vm,Frac_GNaA,'-ob')
     hold on; plot(Vm,Frac_GNaI,'-og')
+    hold on; plot(-68, 0.1, '^k')
     xlim([-120 0]); box off; set(gcf,'color','white')
     set(gca,'linewidth',2); xlabel('Membrane Potential (mV)');
     ylabel('Fractional Conductance (G/GMax)');
-    legend('Sodium Activation','Sodium Inactivation','linewidth',1,'location','west');
+    legend('Sodium Activation','Sodium Inactivation', 'Membrane Potential' ,'linewidth',1,'location','west');
     sgtitle('Sodium Mean Fractional Conductance')
-    %% Plot the waveform   
-    % plot the overall wave above the waveform
-    figure;
-    subplot(5,1,[1:3])
-    plot(Time,Waves*1000,'color','black')
-    box off; set(gcf,'color','white'); set(gca,'linewidth',2)
-    ylabel('Amplitude (A)');
-    title('Voltage Step Waveform')
-    ax = gca; xax = ax.XAxis; set(xax,'visible','off')
 
-    xline(i1/Hz,'--g'); xline(i2/Hz,'--g','HandleVisibility','off');
-    xline(a1/Hz,'--b'); xline(a2/Hz,'--b','HandleVisibility','off');
-    xline(k1/Hz,'--r'); xline(k2/Hz,'--r','HandleVisibility','off');
-    
-    % plot the waveform 
-    Vm_waveform = zeros(size(Waves,1),size(Waves,2)) + holding; % sets the flat line at -65 mV (the holding potential) 
-    for i = 1:size(Vm,1)
-        Vm_waveform(round(0.05*Hz):round(0.25*Hz),i) = Vm(i); % sets the steps
-        Vm_waveform(round(0.251*Hz):round(0.35*Hz),i) = 0;
-    end
-    subplot(5,1,[4,5]); plot(Time,Vm_waveform(:,:),'linewidth',1,'color','black')
-    box off; set(gca,'linewidth',2); set(gcf,'color','white');
-    xlabel('Time (s)'); ylabel('Membrane Potential (mV)'); ylim([(steps(1)-50),(steps(2)+50)])
-    ax = gca; yax = ax.YAxis; set(yax,'TickDirection','out')
-        xline(i1/Hz,'--g'); xline(i2/Hz,'--g','HandleVisibility','off');
-    xline(a1/Hz,'--b'); xline(a2/Hz,'--b','HandleVisibility','off');
-    xline(k1/Hz,'--r'); xline(k2/Hz,'--r','HandleVisibility','off');
-    sgtitle('Waveform')
     %% Create the output
     % Output Generation
     out.rawFilepath = path;
