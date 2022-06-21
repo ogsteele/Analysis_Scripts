@@ -84,13 +84,17 @@ end
 
 %% Split into condition
 E4_control = compiled(strcmp({compiled.genotype}, 'APOE4') ...
-    & strcmp({compiled.ketamine}, 'No'));
+    & strcmp({compiled.ketamine}, 'No') & strcmp({compiled.memantine}, 'No'));
 E4_ketamine = compiled(strcmp({compiled.genotype}, 'APOE4') ...
-    & strcmp({compiled.ketamine}, 'Yes'));
+    & strcmp({compiled.ketamine}, 'Yes') & strcmp({compiled.memantine}, 'No'));
 E3_control = compiled(strcmp({compiled.genotype}, 'APOE3') ...
-    & strcmp({compiled.ketamine}, 'No'));
+    & strcmp({compiled.ketamine}, 'No') & strcmp({compiled.memantine}, 'No'));
 E3_ketamine = compiled(strcmp({compiled.genotype}, 'APOE3') ...
-    & strcmp({compiled.ketamine}, 'Yes'));
+    & strcmp({compiled.ketamine}, 'Yes') & strcmp({compiled.memantine}, 'No'));
+E3_memantine = compiled(strcmp({compiled.genotype}, 'APOE3') ...
+    & strcmp({compiled.ketamine}, 'No') & strcmp({compiled.memantine}, 'Yes'));
+E4_memantine = compiled(strcmp({compiled.genotype}, 'APOE4') ...
+    & strcmp({compiled.ketamine}, 'No') & strcmp({compiled.memantine}, 'Yes'));
 
 %% plotting variables
 colorscheme = ...
@@ -139,9 +143,10 @@ for i = 1:size(E3_control,2)
 end
 E3C_aveSpikes = mean([E3_control.numSpikes],2); % mean number of spikes per I
 x = [E3_control.numSpikes];
+
 for i = 1:size(x,1)
     E3C_aveSpikesSTD(i) = std(x(i,:));
-E3C_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
+    E3C_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
 end
 
 for  i = size(E3_ketamine,2)
@@ -150,9 +155,10 @@ for  i = size(E3_ketamine,2)
 end
 E3K_aveSpikes = mean([E3_ketamine.numSpikes],2); % mean number of spikes per I
 x = [E3_ketamine.numSpikes];
+
 for i = 1:size(x,1)
     E3K_aveSpikesSTD(i) = std(x(i,:));
-E3K_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
+    E3K_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
 end
 
 for i = 1:size(E4_control,2)
@@ -204,12 +210,101 @@ legend(labels(3:4),'linewidth',1,'location','northwest'); box off; set(gca,'line
 xlabel('Current Injected (pA)'); ylabel('Number of Action Potentials'); title('E4 +/- Ketamine')
 ylim([0 14])
 
-subplot(1,4,4); plot(pA,E3C_aveSpikes,'color',[0 0 0]); 
+subplot(1,4,4); plot(pA,E3K_aveSpikes,'color',[0 0 0]); 
 hold on; plot(pA,E4K_aveSpikes,'color',[0.6350 0.0780 0.1840]); 
-errorbar(pA,E3C_aveSpikes,E3C_aveSpikesSEM,'HandleVisibility','off','color',[0 0 0])
+errorbar(pA,E3K_aveSpikes,E3K_aveSpikesSEM,'HandleVisibility','off','color',[0 0 0])
 errorbar(pA,E4K_aveSpikes,E4K_aveSpikesSEM,'HandleVisibility','off','color',[0.6350 0.0780 0.1840])
-legend('E3 Control','E4 Ketamine','linewidth',1,'location','northwest'); box off; set(gca,'linewidth',2); set(gcf,'color','white')
+legend('E3 Ketamine','E4 Ketamine','linewidth',1,'location','northwest'); box off; set(gca,'linewidth',2); set(gcf,'color','white')
 xlabel('Current Injected (pA)'); ylabel('Number of Action Potentials'); title('E3 vs E4 + Ketamine')
+ylim([0 14])
+else 
+    disp('exc_tog == 0');
+end
+
+%% membrane excitability plots (memantine)
+if exc_tog == 1
+memlabels =  {'E3 Control', 'E3 Memantine', 'E4 Control', 'E4 Memantine'};
+aveSpikes = mean([E3_control.numSpikes],2); % mean number of spikes per I
+conditionList = ...
+    {'E3_control', 'E3_memantine', 'E4_control', 'E4_memantine'};
+
+for i = 1:size(E3_control,2)
+    E3C_peakSpikes(i) = max(E3_control(i).numSpikes); % maximum number of APs fired
+    E3C_totalSpikes(i) = sum(E3_control(i).numSpikes); % total number of APs fired
+end
+E3C_aveSpikes = mean([E3_control.numSpikes],2); % mean number of spikes per I
+x = [E3_control.numSpikes];
+for i = 1:size(x,1)
+    E3C_aveSpikesSTD(i) = std(x(i,:));
+    E3C_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
+end
+
+for  i = size(E3_memantine,2)
+    E3M_peakSpikes(i) = max(E3_memantine(i).numSpikes); % maximum number of APs fired
+    E3M_totalSpikes(i) = sum(E3_memantine(i).numSpikes); % total number of APs fired
+end
+E3M_aveSpikes = mean([E3_memantine.numSpikes],2); % mean number of spikes per I
+x = [E3_memantine.numSpikes];
+for i = 1:size(x,1)
+    E3M_aveSpikesSTD(i) = std(x(i,:));
+    E3M_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
+end
+
+for i = 1:size(E4_control,2)
+    E4C_peakSpikes(i) = max(E4_control(i).numSpikes); % maximum number of APs fired
+    E3C_totalSpikes(i) = sum(E4_control(i).numSpikes); % total number of APs fired
+end
+E4C_aveSpikes = mean([E4_control.numSpikes],2); % mean number of spikes per I
+x = [E4_control.numSpikes];
+for i = 1:size(x,1)
+    E4C_aveSpikesSTD(i) = std(x(i,:));
+E4C_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
+end
+
+for i = 1:size(E4_memantine,2)
+    E4M_peakSpikes(i) = max(E4_memantine(i).numSpikes); % maximum number of APs fired
+    E4M_totalSpikes(i) = sum(E4_memantine(i).numSpikes); % total number of APs fired
+end
+E4M_aveSpikes = mean([E4_memantine.numSpikes],2); % mean number of spikes per I
+x = [E4_memantine.numSpikes];
+for i = 1:size(x,1)
+    E4M_aveSpikesSTD(i) = std(x(i,:));
+    E4M_aveSpikesSEM(i) = std(x(i,:))/sqrt(length(x(i,:)));
+end
+
+pA = [-200;-180;-160;-140;-120;-100;-80;-60;-40;-20;0;20;40;60;80;100;120;140;160;180;200;220;240;260;280;300;320;340;360;380;400];
+
+figure;
+subplot(1,4,1); plot(pA,E3C_aveSpikes,'color',[0 0.4470 0.7410]); 
+hold on; plot(pA,E4C_aveSpikes,'color',[0.8500 0.3250 0.0980]);
+errorbar(pA,E3C_aveSpikes,E3C_aveSpikesSEM,'HandleVisibility','off','color',[0 0.4470 0.7410])
+errorbar(pA,E4C_aveSpikes,E4C_aveSpikesSEM,'HandleVisibility','off','color',[0.8500 0.3250 0.0980])
+legend('E3','E4','linewidth',1,'location','northwest'); box off; set(gca,'linewidth',2); set(gcf,'color','white')
+xlabel('Current Injected (pA)'); ylabel('Number of Action Potentials'); title('APOE3 vs APOE4')
+ylim([0 14])
+
+subplot(1,4,2); plot(pA,E3C_aveSpikes,'color',[0 0 0]); 
+hold on; plot(pA,E3M_aveSpikes,'color',[0.6350 0.0780 0.1840]);
+errorbar(pA,E3C_aveSpikes,E3C_aveSpikesSEM,'HandleVisibility','off','color',[0 0 0])
+errorbar(pA,E3M_aveSpikes,E3M_aveSpikesSEM,'HandleVisibility','off','color',[0.6350 0.0780 0.1840])
+legend(memlabels(1:2),'linewidth',1,'location','northwest'); box off; set(gca,'linewidth',2); set(gcf,'color','white')
+xlabel('Current Injected (pA)'); ylabel('Number of Action Potentials'); title('E3 +/- Memantine')
+ylim([0 14])
+
+subplot(1,4,3); plot(pA,E4C_aveSpikes,'color',[0 0 0]); 
+hold on; plot(pA,E4M_aveSpikes,'color',[0.6350 0.0780 0.1840]); 
+errorbar(pA,E4C_aveSpikes,E4C_aveSpikesSEM,'HandleVisibility','off','color',[0 0 0])
+errorbar(pA,E4M_aveSpikes,E4M_aveSpikesSEM,'HandleVisibility','off','color',[0.6350 0.0780 0.1840])
+legend(memlabels(3:4),'linewidth',1,'location','northwest'); box off; set(gca,'linewidth',2); set(gcf,'color','white')
+xlabel('Current Injected (pA)'); ylabel('Number of Action Potentials'); title('E4 +/- Memantine')
+ylim([0 14])
+
+subplot(1,4,4); plot(pA,E3M_aveSpikes,'color',[0 0 0]); 
+hold on; plot(pA,E4M_aveSpikes,'color',[0.6350 0.0780 0.1840]); 
+errorbar(pA,E3M_aveSpikes,E3M_aveSpikesSEM,'HandleVisibility','off','color',[0 0 0])
+errorbar(pA,E4M_aveSpikes,E4M_aveSpikesSEM,'HandleVisibility','off','color',[0.6350 0.0780 0.1840])
+legend('E3 Memantine','E4 Memantine','linewidth',1,'location','northwest'); box off; set(gca,'linewidth',2); set(gcf,'color','white')
+xlabel('Current Injected (pA)'); ylabel('Number of Action Potentials'); title('E3 vs E4 + Memantine')
 ylim([0 14])
 else 
     disp('exc_tog == 0');
@@ -378,8 +473,8 @@ else
 end
 
 %% Save Variables
-%save('compiled.mat', 'compiled', '-v7.3')
-%save conditions.mat E3_ketamine E3_control E4_ketamine E4_control
-%clearvars -except compiled E3_ketamine E3_control E4_ketamine E4_control
-%load compiled.mat
+save('compiled.mat', 'compiled', '-v7.3')
+save conditions.mat E3_ketamine E3_control E4_ketamine E4_control E3_memantine E4_memantine
+clearvars -except compiled E3_ketamine E3_control E4_ketamine E4_control E3_memantine E4_memantine
+load compiled.mat
 

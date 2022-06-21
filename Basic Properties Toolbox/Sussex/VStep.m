@@ -1,4 +1,4 @@
-%function out = VStep(S, clampfile, steps, holding, capacitance, N)
+function out = VStep(clampfile, steps, holding, capacitance, N)
 %% Decription
 % Voltage step protocol analysis
 
@@ -10,12 +10,11 @@
 % example use
 %       [file,path] = uigetfile('*.ma');
 %       clampfile = fullfile(path,file);
-%       S = ephysIO(clampfile);
 %       steps = [-120,80];
 %       holding = -65;
 %       capacitance = 220; 
 %       N = 10;
-%       output = VStep(S,clampfile,steps,holding);
+%       output = VStep(clampfile, steps, holding, capacitance, N);
 
 % input
 %       S = ephysIO output structure of first 'ClampX.ma' recording
@@ -27,22 +26,30 @@
 %       capacitance = cell capacitance in pF
 %       N = P/N fraction (10 by default)
 
+% output
+%       
+
 %% Dev Mode
-path = 'D:\Oli Steele\Documents\GitHub\Analysis Scripts\Basic Properties Toolbox\Sussex\exampleData\VoltageStep\OGS_ActInact_Raw_000\000';
-clampfile = [path '\Clamp1.ma'];
-S = ephysIO(clampfile);
-steps = [-120,80];
-holding = -65;
-capacitance = 220; 
-N = 10; 
+%path = 'D:\Oli Steele\Documents\GitHub\Analysis Scripts\Basic Properties Toolbox\Sussex\exampleData\VoltageStep\OGS_ActInact_Raw_000\000';
+%clampfile = [path '\Clamp1.ma'];
+%S = ephysIO(clampfile);
+%steps = [-120,80];
+%holding = -65;
+%capacitance = 220; 
+%N = 10; 
 %output = VStep(S,clampfile,steps,holding);
 
 %% TO DO 
-% create output structure
-% save figures
 % calculate actual ENa in our experiments
+%% Clear the environment
+close all
 
 %% Organise data and plot
+
+w = warning ('off','all');
+warning(w)
+
+S = ephysIO(clampfile);
 
 % Split into time and waves
 Time = S.array(:,1);
@@ -78,20 +85,22 @@ if run == "Yes"
     % ask the user 
     dlgTitle    = 'P/N Subtraction';
     dlgQuestion = 'Is there an associated P/N subtraction recording?';
-    sub = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
+    subtracted = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
     
-    if sub == "Yes" 
+    if subtracted == "Yes" 
         [subfile, subpath] = uigetfile('*.*');
         cd(subpath)
         sub = ephysIO(subfile);
         subarray = sub.array(:,2:end);
         fsub = (filter1(subarray,Time, 0, 500))*N; % heavily filtered trace to be subtracted
         Waves = Waves-fsub; % P/N subtracted trace
-    elseif sub == "No"
+    elseif subtracted == "No"
         % carry on with the analysis anyway, noting that the recording was
         % not leak subtracted
         subpath = "N/A";
     end
+    
+    cd ../.. % change back two directories
     
     % create wavelength and Hz variables for ease later
     wavelength = Time(end);
@@ -100,7 +109,7 @@ if run == "Yes"
     
     %% Set cursors
     % NaA start and finish (variable)
-    f = figure;
+    figure;
     plot(Time,Waves,'color','black')
     box off; set(gcf,'color','white'); set(gca,'linewidth',2)
     ylabel('Amplitude (A)');
@@ -119,8 +128,8 @@ if run == "Yes"
     
     %% Plot the trace   
     % plot the overall wave above the waveform
-    figure;
-    subplot(5,1,[1:3])
+    trace_fig = figure;
+    subplot(5,1,(1:3))
     plot(Time,Waves*1000,'color','black','HandleVisibility', 'off')
     box off; set(gcf,'color','white'); set(gca,'linewidth',2)
     ylabel('Amplitude (A)');
@@ -140,7 +149,7 @@ if run == "Yes"
         Vm_waveform(round(0.05*Hz):round(0.25*Hz),i) = Vm(i); % sets the steps
         Vm_waveform(round(0.251*Hz):round(0.35*Hz),i) = 0;
     end
-    subplot(5,1,[4,5]); plot(Time,Vm_waveform(:,:),'linewidth',1,'color','black')
+    subplot(5,1,(4:5)); plot(Time,Vm_waveform(:,:),'linewidth',1,'color','black')
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
     xlabel('Time (s)'); ylabel('Membrane Potential (mV)'); ylim([(steps(1)-50),(steps(2)+50)])
     ax = gca; yax = ax.YAxis; set(yax,'TickDirection','out')
@@ -152,15 +161,17 @@ if run == "Yes"
     xline(k1/Hz,'--r'); xline(k2/Hz,'--r','HandleVisibility','off');
     
     %% Na Activation values
-    figure; 
+    NaA_fig = figure; 
     subplot(1,2,1)
     plot(...
         Time((round((A(1)*Hz)-100)):(round((A(2)*Hz)+100))),...
         Waves((round((A(1)*Hz)-100)):(round((A(2)*Hz)+100)),:),...
         'color','black','HandleVisibility','off')
     xline(A(1),'--b'); xline(A(2),'--b','HandleVisibility','off');
+    NaApeakval = zeros(1,size(Waves,2));
+    ind = zeros(1,size(Waves,2));
     for i = 1:size(Waves,2)
-        [NaApeakval(i),ind(i)] = min(Waves(A(1)*Hz:A(2)*Hz,i));
+        [NaApeakval(i),ind(i)] = min(Waves(round(A(1)*Hz):round(A(2)*Hz),i));
         hold on; plot((ind(i)+A(1)*Hz)/Hz,NaApeakval(i),'ob'); hold off
     end
     ylabel('Amplitude (A)'); xlabel('Time (s)');
@@ -174,10 +185,11 @@ if run == "Yes"
     sgtitle('NaA')
     
     %% Potassium values
-    figure; 
+    K_fig = figure; 
     subplot(1,2,1)
     plot(Time(k1-100:k2+100),Waves(k1-100:k2+100,:),'color','black','HandleVisibility','off')
     xline(k1/Hz,'--r'); xline(k2/Hz,'--r','HandleVisibility','off');
+    Kmeanval = zeros(1,size(Waves,2));
     for i = 1:size(Waves,2)
         Kmeanval(i) = mean(Waves(k1:k2,i));
         hold on; plot((((k2-k1)/2)+k1-100)/Hz,Kmeanval(i),'or'); hold off
@@ -193,10 +205,12 @@ if run == "Yes"
     sgtitle('K')
     
     %% Na Inactivation values
-    figure; 
+    NaI_fig = figure; 
     subplot(1,2,1)
     plot(Time(i1-100:i2+100),Waves(i1-100:i2+100,:),'color','black','HandleVisibility','off')
     xline(i1/Hz,'--g'); xline(i2/Hz,'--g','HandleVisibility','off');
+    % preallocate for speed
+    NaIpeakval = zeros(1,size(Waves,2));
     for i = 1:size(Waves,2)
         [NaIpeakval(i),ind(i)] = min(Waves(i1:i2,i));
         hold on; plot((ind(i)+i1)/Hz,NaIpeakval(i),'og'); hold off
@@ -214,8 +228,11 @@ if run == "Yes"
     %% Na/K Current Density Plots
     % convert to pA and divide by pF to calculate the current density in
     % in pA/pF
-    figure; plot(Vm,(NaApeakval*1e12)/capacitance,'-ob')
-    hold on; plot(Vm,(Kmeanval*1e12)/capacitance,'-or')
+    NaK_ID_fig = figure;
+    NaID = (NaApeakval*1e12)/capacitance;
+    KID = (Kmeanval*1e12)/capacitance;
+    plot(Vm,NaID,'-ob')
+    hold on; plot(Vm,KID,'-or')
     ax = gca;
     ax.XAxisLocation = 'origin'; xlabel('Membrane Potential (mV)')
     ax.YAxisLocation = 'origin'; ylabel('Current Density (pA/pF)')
@@ -230,8 +247,10 @@ if run == "Yes"
     %                                         ~ Telezhkin et al., 2016
     
     % calculate ENa here properly later
-    ENa = [66.7]; 
+    ENa = 66.7; 
     % convert to conductance (G)
+    GNaA =  zeros(1,size(Vm,1));
+    GNaI =  zeros(1,size(Vm,1));
     for i = 1:size(Vm,1)
         GNaA(i) = NaApeakval(i) / (Vm(i) - ENa);
         GNaI(i) = NaIpeakval(i) / (Vm(i) - ENa);
@@ -240,18 +259,66 @@ if run == "Yes"
     Frac_GNaA = GNaA./max(GNaA(1:25));
     Frac_GNaI = GNaI./max(GNaI(1:25));
     % plot
-    figure; plot(Vm,Frac_GNaA,'-ob')
+    NaFracG_fig = figure; plot(Vm,Frac_GNaA,'-ob')
     hold on; plot(Vm,Frac_GNaI,'-og')
-    hold on; plot(-68, 0.1, '^k')
+    %hold on; plot(-68, 0.1, '^k') % temporarily remove the membrane
+    %potential bit
     xlim([-120 0]); box off; set(gcf,'color','white')
     set(gca,'linewidth',2); xlabel('Membrane Potential (mV)');
     ylabel('Fractional Conductance (G/GMax)');
-    legend('Sodium Activation','Sodium Inactivation', 'Membrane Potential' ,'linewidth',1,'location','west');
+    legend('Sodium Activation','Sodium Inactivation','linewidth',1,'location','west');
+    %legend('Sodium Activation','Sodium Inactivation', 'Membrane Potential' ,'linewidth',1,'location','west');
     sgtitle('Sodium Mean Fractional Conductance')
 
+    
+    %% Conditions
+    % What Genotype was the animal?
+    dlgTitle    = 'Genotpye';
+    dlgQuestion = 'What Genotype was this animal?';
+    genotype = questdlg(dlgQuestion,dlgTitle,'APOE3','APOE4','APOE3');
+
+    % Was the recording exposed to ketamine?
+    dlgTitle    = 'Ketamine';
+    dlgQuestion = 'Was this recorded in the presence of ketamine?';
+    ketamine = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
+ 
+    % Was the recording exposed to memantine?
+    dlgTitle    = 'Memantine';
+    dlgQuestion = 'Was this recorded in the presence of meamntine?';
+    memantine = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
+    
     %% Create the output
     % Output Generation
-    out.rawFilepath = path;
+    out.Genotype = genotype;
+    out.Ketamine = ketamine;
+    out.Memantine = memantine;
+    out.rawFilepath = clampfile;
     out.subfilepath = subpath;
-    out.leakSubtracted = sub;
+    out.leakSubtracted = subtracted;
+    out.raw = S;
+    out.sub = sub;
+    out.Time = Time;
+    out.Waves = Waves;
+    out.Vm = Vm;
+    out.Cap = capacitance;
+    out.NaAPeak = NaApeakval;
+    out.KMean = Kmeanval;
+    out.NaIPeak = NaIpeakval;
+    out.NaID = NaID;
+    out.KID = KID;
+    out.GNaA = GNaA;
+    out.GNaI = GNaI;
+    
+    % create output directory
+    dirname = [char(splitPath(end-2)),'_output'];
+    mkdir(dirname); cd(dirname);
+    
+    % save output & figures
+    save('out.mat','out')
+    savefig(trace_fig,'trace_fig')
+    savefig(NaA_fig, 'NaA_fig')
+    savefig(K_fig,'K_fig')
+    savefig(NaI_fig,'NaI_fig')
+    savefig(NaK_ID_fig,'NaK_ID_fig')
+    savefig(NaFracG_fig,'NaFracG_fig')
 end

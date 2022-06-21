@@ -441,6 +441,7 @@ if istep_run == 0
 elseif istep_run == 1
     genotype = questdlg(dlgQuestion,dlgTitle,'APOE3','APOE4',(output.genotype));  
 end
+
 % Was the recording exposed to ketamine?
 dlgTitle    = 'Ketamine';
 dlgQuestion = 'Was this recorded in the presence of ketamine?';
@@ -448,6 +449,15 @@ if istep_run == 0
     ketamine = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
 elseif istep_run == 1
     ketamine = questdlg(dlgQuestion,dlgTitle,'Yes','No',(output.ketamine));
+end
+
+% Was the recording exposed to memantine?
+dlgTitle    = 'Memantine';
+dlgQuestion = 'Was this recorded in the presence of meamntine?';
+if istep_run == 0
+    memantine = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
+elseif istep_run == 1
+    memantine = questdlg(dlgQuestion,dlgTitle,'Yes','No',(output.ketamine));
 end
 
 % What was the slice ID, and  add any notes?
@@ -496,6 +506,7 @@ output.Offline_BB = Vm_adjust;
 output.Online_BB_performed = balanced;
 output.Offline_BB_performed = offline_BB_performed;
 output.Notes = slice_id_notes(2);
+output.memantine = memantine;
 
 % navigate to root dir
 cd(path)
