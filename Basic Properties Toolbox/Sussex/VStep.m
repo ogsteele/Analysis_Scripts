@@ -37,7 +37,7 @@ function out = VStep(clampfile, steps, holding, capacitance, N)
 %holding = -65;
 %capacitance = 220; 
 %N = 10; 
-%output = VStep(S,clampfile,steps,holding);
+%output = VStep(clampfile,steps,holding);
 
 %% TO DO 
 % calculate actual ENa in our experiments
@@ -98,6 +98,7 @@ if run == "Yes"
         % carry on with the analysis anyway, noting that the recording was
         % not leak subtracted
         subpath = "N/A";
+        sub = [];
     end
     
     cd ../.. % change back two directories
