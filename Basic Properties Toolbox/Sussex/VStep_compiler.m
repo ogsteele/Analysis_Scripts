@@ -43,11 +43,14 @@ E3_ketamine = compiled(strcmp({compiled.Genotype}, 'APOE3') ...
 
 %% Calculate Maximum Current Densities
 
+ind = [];
 % APOE3 Control
 for i = 1:size(E3_control,2)
 E3C_NaAD(i) = (min(E3_control(i).NaAPeak)*1e12)/E3_control(i).Cap;
 E3C_KD(i) = (max(E3_control(i).KMean)*1e12)/E3_control(i).Cap;
 E3C_NaID(i) = (min(E3_control(i).NaAPeak)*1e12)/E3_control(i).Cap;
+[~,ind(i)] = min(E3_control(i).NaAPeak);
+E3C_peak_array(:,i) = E3_control(i).Waves(:,ind(i))/E3_control(i).Cap;
 end
 
 % APOE3 Ketamine
@@ -57,11 +60,14 @@ E3K_KD(i) = (max(E3_ketamine(i).KMean)*1e12)/E3_ketamine(i).Cap;
 E3K_NaID(i) = (min(E3_ketamine(i).NaAPeak)*1e12)/E3_ketamine(i).Cap;
 end
 
+ind = [];
 % APOE4 Control
 for i = 1:size(E4_control,2)
 E4C_NaAD(i) = (min(E4_control(i).NaAPeak)*1e12)/E4_control(i).Cap;
 E4C_KD(i) = (max(E4_control(i).KMean)*1e12)/E4_control(i).Cap;
 E4C_NaID(i) = (min(E4_control(i).NaAPeak)*1e12)/E4_control(i).Cap;
+[~,ind(i)] = min(E4_control(i).NaAPeak);
+E4C_peak_array(:,i) = E4_control(i).Waves(:,ind(i))/E4_control(i).Cap;
 end
 
 % APOE4 Ketamine
@@ -297,8 +303,16 @@ sgtitle('Maximal K Current Density:')
 cd('VStep Analysis')
 
 % structure
+vals.E3C_NaAD = E3C_NaAD;
+vals.E4C_NaAD = E4C_NaAD;
+vals.E3C_KD = E3C_KD;
+vals.E4C_KD = E4C_KD;
+vals.E3C_peak_array = E3C_peak_array;
+vals.E4C_peak_array = E4C_peak_array;
+
 if save_struct == true
 save('compiled.mat', 'compiled', '-v7.3')
+save('vals.mat', 'vals', '-v7.3')
 else
 end
 

@@ -95,8 +95,8 @@ hold on
 close
 
 % Seperate out window of interest
-fEPSP_start = round(x(1)+3500);
-fEPSP_end = round(x(2)+3500);
+fEPSP_start = round(x(1));
+fEPSP_end = round(x(2));
 fEPSP_Window = YF((fEPSP_start:fEPSP_end),:);
 num_points = size(fEPSP_Window,1);
 fEPSP_Window_Time = linspace(0,Time_Diff * num_points,num_points);

@@ -17,7 +17,7 @@ prompt = {'Enter Amplifier Scale Factor:',...
     'Enter Desired Rs Value (MOhms):'};
 dlg_title = 'Input parameters';
 num_lines = 1;
-def = {'0.5','20000','100','10','-0.002','-70','2','10','0','8'};
+def = {'0.5','25000','100','10','-0.002','-70','2','10','0','8'};
 answer  = inputdlg(prompt,dlg_title,num_lines,def,'on');
 answer = str2double(answer);
 
