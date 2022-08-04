@@ -13,7 +13,7 @@
 cd('E:\Experiments\NMDAR mEPSC\04_processing\Subtraction\2022 Analysis')
 
 % choose whether to plot individual figures too
-indi_fig = 0; % logical (1 plots, 0 skips)
+indi_fig = 1; % logical (1 plots, 0 skips)
 if indi_fig == 1
     disp('Plotting individual figures')
 else
@@ -25,13 +25,16 @@ for j = 1:4
     % select file
     file = uigetfile('*.txt'); % select file
     warning('off') % mute warnings
-    paths = table2cell(readtable(file)); % read in filepaths
-    paths = char(paths(:,1)); % convert to character arrays
+    %paths = table2cell(readtable(file)); % read in filepaths
+    %paths = char(paths(:,1)); % convert to character arrays
+
+    % test new method for reading in the file formats
+    paths = textread(file,'%s','delimiter','\n');
        
     % Analysis loop
     for i = 1:size(paths,1)
         % pull out event ensemble information
-        cd(fullfile(strtrim(paths(i,:)),'output_2022')) % cd to the first dir
+        cd(fullfile(char(strtrim(paths(i,:))),'output_2022')) % cd to the first dir
         % extract AMPAR
         A = ephysIO('AMPAR_ensemble.phy');
         AMPAR(:,i) = A.array(:,2)*1e12; % array in pA
@@ -197,11 +200,11 @@ figure;
     % Overlay (Traces)
     sgtitle('Mixed mEPSCs by Gender & Genotype')
     subplot(2,3,[1,4]); plot(time,out(1).MIXED_ave)
-    hold on; plot(time,out(2).MIXED_ave); plot(time,out(3).MIXED_ave);
+    hold on; plot(time,out(2).MIXED_ave); plot(time,out(3).MIXED_ave); plot(time,out(4).MIXED_ave);
     box off; set(gcf,'color','white'); set(gca,'linewidth',2)
     ylabel('Amplitude (pA)'); xlabel('Time (s)');
     xlim([0 0.1]);ylim([-25 5]); title('Ensemble Averages (Median) Overlaid Traces');
-    legend(out(1).Condition,out(2).Condition,out(3).Condition,'location','southeast','linewidth',0.001);
+    legend(out(1).Condition,out(2).Condition,out(3).Condition,out(4).Condition,'location','southeast','linewidth',0.001);
     % Amplitude Summary
     subplot(2,3,2)
     Y = padcat(out(1).MIXED_amp,out(2).MIXED_amp,abs(out(3).MIXED_amp),abs(out(4).MIXED_amp));
@@ -215,7 +218,7 @@ figure;
     scatter(x(:,1),Y(:,1),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0.4470 0.7410]);
     scatter(x(:,2),Y(:,2),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.8500 0.3250 0.0980]);
     scatter(x(:,3),Y(:,3),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.9290 0.6940 0.1250]);
-    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0 0]);
+    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.4940 0.1840 0.5560]);
     ylabel('Amplitude (pA)'); xlabel('Condition'); title('Amplitude')
     % Hz Summary
     subplot(2,3,3)
@@ -230,7 +233,7 @@ figure;
     scatter(x(:,1),Y(:,1),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0.4470 0.7410]);
     scatter(x(:,2),Y(:,2),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.8500 0.3250 0.0980]);
     scatter(x(:,3),Y(:,3),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.9290 0.6940 0.1250]);
-    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0 0]);
+    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.4940 0.1840 0.5560]);
     ylabel('Frequency (Hz)'); xlabel('Condition'); title('Frequency')
     % Rise Summary
     subplot(2,3,5)
@@ -245,7 +248,7 @@ figure;
     scatter(x(:,1),Y(:,1),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0.4470 0.7410]);
     scatter(x(:,2),Y(:,2),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.8500 0.3250 0.0980]);
     scatter(x(:,3),Y(:,3),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.9290 0.6940 0.1250]);
-    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0 0]);
+    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.4940 0.1840 0.5560]);
     ylabel('Rise Time Constant (Hz)'); xlabel('Condition'); title('Rise Time')
     % Decay Summary
     subplot(2,3,6)
@@ -260,7 +263,7 @@ figure;
     scatter(x(:,1),Y(:,1),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0.4470 0.7410]);
     scatter(x(:,2),Y(:,2),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.8500 0.3250 0.0980]);
     scatter(x(:,3),Y(:,3),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.9290 0.6940 0.1250]);
-    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0 0]);
+    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.4940 0.1840 0.5560]);
     ylabel('Decay Time Constant (Hz)'); xlabel('Condition'); title('Decay Time')
     
 %% create the AMPAR master figure
@@ -272,93 +275,98 @@ figure;
     box off; set(gcf,'color','white'); set(gca,'linewidth',2)
     ylabel('Amplitude (pA)'); xlabel('Time (s)');
     xlim([0 0.1]);ylim([-25 5]); title('Ensemble Averages (Median) Overlaid Traces');
-    legend(out(1).Condition,out(2).Condition,out(3).Condition,'location','southeast','linewidth',0.001);
+    legend(out(1).Condition,out(2).Condition,out(3).Condition, out(4).Condition,'location','southeast','linewidth',0.001);
     % Amplitude Summary
     subplot(2,3,2)
-    Y = padcat(out(1).AMPAR_amp,out(2).AMPAR_amp,abs(out(3).AMPAR_amp));
+    Y = padcat(out(1).AMPAR_amp,out(2).AMPAR_amp,abs(out(3).AMPAR_amp), abs(out(4).AMPAR_amp));
     b = boxplot(Y,...
-        'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
+        'labels',{out(1).Condition, out(2).Condition, out(3).Condition, out(4).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
     set(b(7,:),'Visible','off') % make the outlier points invisible
     hold on
-    x=repmat(1:3,length(Y),1);
+    x=repmat(1:4,length(Y),1);
     hold on
     scatter(x(:,1),Y(:,1),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0.4470 0.7410]);
     scatter(x(:,2),Y(:,2),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.8500 0.3250 0.0980]);
     scatter(x(:,3),Y(:,3),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.9290 0.6940 0.1250]);
+    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.4940 0.1840 0.5560]);
     ylabel('Amplitude (pA)'); xlabel('Condition'); title('Amplitude')
     % Hz Summary
     subplot(2,3,3)
-    Y = padcat(out(1).AMPAR_Hz,out(2).AMPAR_Hz,abs(out(3).AMPAR_Hz));
+    Y = padcat(out(1).AMPAR_Hz,out(2).AMPAR_Hz,abs(out(3).AMPAR_Hz), abs(out(4).AMPAR_Hz));
     b = boxplot(Y,...
-        'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
+        'labels',{out(1).Condition, out(2).Condition, out(3).Condition, out(4).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
     set(b(7,:),'Visible','off') % make the outlier points invisible
     hold on
-    x=repmat(1:3,length(Y),1);
+    x=repmat(1:4,length(Y),1);
     hold on
     scatter(x(:,1),Y(:,1),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0.4470 0.7410]);
     scatter(x(:,2),Y(:,2),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.8500 0.3250 0.0980]);
     scatter(x(:,3),Y(:,3),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.9290 0.6940 0.1250]);
+    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.4940 0.1840 0.5560]);
     ylabel('Frequency (Hz)'); xlabel('Condition'); title('Frequency')
     % Rise Summary
     subplot(2,3,5)
-    Y = padcat(out(1).AMPAR_rise,out(2).AMPAR_rise,abs(out(3).AMPAR_rise));
+    Y = padcat(out(1).AMPAR_rise,out(2).AMPAR_rise,abs(out(3).AMPAR_rise), abs(out(4).AMPAR_rise));
     b = boxplot(Y,...
-        'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
+        'labels',{out(1).Condition, out(2).Condition, out(3).Condition, out(4).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
     set(b(7,:),'Visible','off') % make the outlier points invisible
     hold on
-    x=repmat(1:3,length(Y),1);
+    x=repmat(1:4,length(Y),1);
     hold on
     scatter(x(:,1),Y(:,1),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0.4470 0.7410]);
     scatter(x(:,2),Y(:,2),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.8500 0.3250 0.0980]);
     scatter(x(:,3),Y(:,3),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.9290 0.6940 0.1250]);
+    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.4940 0.1840 0.5560]);
     ylabel('Rise Time Constant (Hz)'); xlabel('Condition'); title('Rise Time')
     % Decay Summary
     subplot(2,3,6)
-    Y = padcat(out(1).AMPAR_decay,out(2).AMPAR_decay,abs(out(3).AMPAR_decay));
+    Y = padcat(out(1).AMPAR_decay,out(2).AMPAR_decay,abs(out(3).AMPAR_decay),abs(out(4).AMPAR_decay));
     b = boxplot(Y,...
-        'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
+        'labels',{out(1).Condition, out(2).Condition, out(3).Condition, out(4).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
     set(b(7,:),'Visible','off') % make the outlier points invisible
     hold on
-    x=repmat(1:3,length(Y),1);
+    x=repmat(1:4,length(Y),1);
     hold on
     scatter(x(:,1),Y(:,1),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0.4470 0.7410]);
     scatter(x(:,2),Y(:,2),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.8500 0.3250 0.0980]);
     scatter(x(:,3),Y(:,3),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.9290 0.6940 0.1250]);
+    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.4940 0.1840 0.5560]);
     ylabel('Decay Time Constant (Hz)'); xlabel('Condition'); title('Decay Time')
     
 %% Create the NMDAR master figure
 figure; 
     % Overlay (Traces)
     sgtitle('NMDAR mEPSCs by Gender & Genotype')
-    subplot(2,3,[1,4]); plot(time,out(1).NMDAR_ave)
-    hold on; plot(time,out(2).NMDAR_ave); plot(time,out(3).NMDAR_ave);
+    subplot(4,2,[1,3,5]); plot(time,out(1).NMDAR_ave)
+    hold on; plot(time,out(2).NMDAR_ave); plot(time,out(3).NMDAR_ave); plot(time,out(4).NMDAR_ave);
     box off; set(gcf,'color','white'); set(gca,'linewidth',2)
     ylabel('Amplitude (pA)'); xlabel('Time (s)');
     xlim([0 0.1]);ylim([-10 5]); title('Ensemble Averages (Median) Overlaid Traces');
-    legend(out(1).Condition,out(2).Condition,out(3).Condition,'location','southeast','linewidth',0.001);
+    legend(out(1).Condition,out(2).Condition,out(3).Condition, out(4).Condition,'location','southeast','linewidth',0.001);
     % Amplitude Summary
-    subplot(2,3,2)
-    Y = padcat(abs(out(1).NMDAR_amp),abs(out(2).NMDAR_amp),abs(out(3).NMDAR_amp));
+    subplot(4,2,7)
+    Y = padcat(abs(out(1).NMDAR_amp),abs(out(2).NMDAR_amp),abs(out(3).NMDAR_amp), abs(out(4).NMDAR_amp));
     b = boxplot(Y,...
-        'labels',{out(1).Condition, out(2).Condition, out(3).Condition});
+        'labels',{out(1).Condition, out(2).Condition, out(3).Condition, out(4).Condition});
     box off; set(gca,'linewidth',2); set(gcf,'color','white');
     set(b(7,:),'Visible','off') % make the outlier points invisible
     hold on
-    x=repmat(1:3,length(Y),1);
+    x=repmat(1:4,length(Y),1);
     hold on
     scatter(x(:,1),Y(:,1),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0 0.4470 0.7410]);
     scatter(x(:,2),Y(:,2),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.8500 0.3250 0.0980]);
     scatter(x(:,3),Y(:,3),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.9290 0.6940 0.1250]);
+    scatter(x(:,4),Y(:,4),'filled','MarkerFaceAlpha',0.6','jitter','on','jitterAmount',0.15,'MarkerFacecolor',[0.4940 0.1840 0.5560]);
     ylabel('Amplitude (pA)'); xlabel('Condition'); title('Amplitude')
-    for i = 1:3
-        plot_array = [3 5 6];
-        colour_array = [0 0.4470 0.7410; 0.8500 0.3250 0.0980; 0.9290 0.6940 0.1250];
+    for i = 1:4
+        plot_array = [2 4 6 8];
+        colour_array = [0 0.4470 0.7410; 0.8500 0.3250 0.0980; 0.9290 0.6940 0.1250; 0.4940 0.1840 0.5560];
         % Overlay loop
-        subplot(2,3,plot_array(i)); plot(time,out(i).NMDAR,'color',[0.5 0.5 0.5 0.4],'HandleVisibility','off'); 
+        subplot(4,2,plot_array(i)); plot(time,out(i).NMDAR,'color',[0.5 0.5 0.5 0.4],'HandleVisibility','off'); 
         hold on; plot(time,out(i).NMDAR_ave,'color', colour_array(i,:), 'linewidth' ,2)
         box off; set(gcf,'color','white'); set(gca,'linewidth',2)
         ylabel('Amplitude (pA)'); xlabel('Time (s)');
