@@ -1,6 +1,6 @@
 function [output] = IStep_K
 %% About
-%@OGSteele, 2022
+% @OGSteele, 2022
 
 % user should select the first 'Clamp1.ma' recording in the sequence
 
@@ -515,8 +515,8 @@ cd ..\..
 % save output
 outname = split(strtrim(path),filesep);
 outname = char(string(outname(end-2)));
-saveas(fh,[outname,'.fig']);
-save([outname,'.mat'],'output')
+%saveas(fh,[outname,'.fig']);
+%save([outname,'.mat'],'output')
 
 % return to if loop from the top 
     else
