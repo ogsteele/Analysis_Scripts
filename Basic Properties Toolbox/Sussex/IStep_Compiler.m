@@ -1,10 +1,10 @@
 % IStep_Comp
 
 %% Fig Toggle
-mem_tog = 0;
+mem_tog = 1;
 exc_tog = 1;
 iei_tog = 1;
-rh_tog = 0;
+rh_tog = 1;
 
 %% Code
 
