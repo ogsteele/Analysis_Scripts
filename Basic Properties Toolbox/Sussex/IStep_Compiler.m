@@ -3,7 +3,7 @@
 %% Fig Toggle
 mem_tog = 1;
 exc_tog = 1;
-iei_tog = 1;
+iei_tog = 0;
 rh_tog = 1;
 
 %% Code
