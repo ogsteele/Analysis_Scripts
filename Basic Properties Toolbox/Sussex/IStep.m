@@ -61,12 +61,24 @@ function [output] = IStep(S, clampfile, steps)
     % afterhyp
     % peak
 
+%% Update Log
+% 17.09.22
+%   - improve cross platform functionality (filesep throughout)
+%   - move saved figure and output to the root folder of the recording
+%   - correct file naming bug
+%   - include subAP_Vm figure too
 %% To include 
 % list of stuff to implement in the future
 
-% average Vm at each sub AP current step
-
 % every action potential detail
+
+% hard code the start and end of analysis regions and plot
+
+% correct issue with unreliable threshold detection
+
+% fix lazy alignment of rheobase plot
+
+% read protocol data from the other channel of the .tdms file
 
 
 %% Code
@@ -79,7 +91,7 @@ Waves = S.array(:,2:end);
 
 % cd to path
 splitPath = split(clampfile,filesep);
-newPath = char(string(join(splitPath(1:end-3),"\")));
+newPath = char(string(join(splitPath(1:end-2),filesep)));
 cd(newPath)
 
 %% run analysis or not?
@@ -362,7 +374,7 @@ subAP_Vm = mean(Waves(Vm_start:Vm_end,1:wavenum_first-1));
 
 
 % plot the subAP_Vm values
-figure; subplot(1,2,1)
+figure(fh2); subplot(1,2,1)
 plot(Time,Waves(:,1),'color','black'); hold on
 plot(Time,Waves(:,2:wavenum_first-1),'color','black','HandleVisibility','off')
 xline(1,'--r'); xline(1.5,'--r','HandleVisibility','off')
@@ -480,14 +492,15 @@ output.Offline_BB_performed = offline_BB_performed;
 output.Notes = notes;
 
 % navigate to root dir
-cd(newPath)
-cd ..\..
+cd(newPath) 
+%chdir(fullfile('..','..'))
 
 % save output
-outname = split(strtrim(path),filesep);
-outname = char(string(outname(end-2)));
-%saveas(fh,[outname,'.fig']);
-%save([outname,'.mat'],'output')
+outname = split(strtrim(clampfile),filesep);
+outname = char(string(outname(end-2))); % name the output the same as the folder the recording came from
+saveas(fh,[outname,'_master.fig']); % save the master fig
+saveas(fh2,[outname,'_subAP.fig']); % save the subAP_Vm fig
+save([outname,'.mat'],'output')
 
 % return to if loop from the top 
     else
