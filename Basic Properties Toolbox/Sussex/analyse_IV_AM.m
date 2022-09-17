@@ -1,7 +1,7 @@
 [file,path] = uigetfile('*.ma'); % get the file of interest
 clampfile = fullfile(path,file); % generate the full file path of the file
 SI = ephysIO({clampfile,2}); % load in the current data
-x = SI.array(:,1); % x is time here, but not in seconds, data points
+x = SI.array(:,1); % x is time here
 Y = SI.array(:,2:end); % y is the array of current data
 base = mean (mean (Y(4001:16001,:))); % determine the baseline (intra-step)
 N = size(SI.array,2) - 1; % get the number of waves in the array (minus time)

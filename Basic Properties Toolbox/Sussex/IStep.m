@@ -1,30 +1,14 @@
-function [output] = IStep(S, clampfile, steps)
+function [output] = IStep
 %% Decription
 % Current step protocol analysis, featuring user defined input at various
 % points
 % @OGSteele, 2022
 
-
-% example use
-%       [file,path] = uigetfile('*.ma');
-%       clampfile = fullfile(path,file);
-%       S = ephysIO(clampfile);
-%       steps = [-200,400];
-%       output = IStep(S,clampfile,steps);
-
-
-% input
-%       S = ephysIO output structure of first 'ClampX.ma' recording
-%       in a current step sequence, assuming the the rest are in the same
-%       directory structure
-%       clampfile = full file path of S
-%       steps = [min,max] pA step vals
-
+% example use;
+%       output = IStep;
 
 % output 
 %   is a matlab structure containing the following;
-%       genotype - APOE3 or APOE4
-%       condition - LPS or PBS
 %       filepath - filepath of the first wave
 %       ID - slice_ID on plate
 %       steps - current amplitude of each step in pA
@@ -44,48 +28,37 @@ function [output] = IStep(S, clampfile, steps)
 %       rise - Depolarisation rate in mV/s
 %       fall - Repolarisation rate in mV/s
 %       IR - Input Resistance in MOhm
-%       Vm - sub action potential Vm
+%       Vm - sub action potential Vm in mV
 %       Rs_Init - Access resistance approximated from initial step  in MOhm
 %       Offline_BB - Vm adjustments for offline bridge balance in V
 %       Online_BB_performed = Yes/No 
 %       Offline_BB_performed = Yes/No 
-
-%% Notes
-% includes '.evt-like' functionality, checking to see if analysis has
-% been conducted before and taking the parameters used previously in case
-% elements of the code are changed
-
-% bridge balance corrected values
-    % IR
-    % thresh
-    % afterhyp
-    % peak
 
 %% Update Log
 % 17.09.22
 %   - improve cross platform functionality (filesep throughout)
 %   - move saved figure and output to the root folder of the recording
 %   - correct file naming bug
-%   - include subAP_Vm figure too
-%% To include 
-% list of stuff to implement in the future
+%   - include subAP_Vm figure too (renamed old fig to master fig)
+%   - fixed lazy rheobase annotation alignment
+%   - read in command potential waveform data from .ma recordings
+%   - allowed UI selection of where to detect action potentials from
+%   - increased robustness of the Ih Sag plotting
+%   - included the use of ephysIO inside the script for ease of use
+%   - tidied up description
+
+%% To do list (when Oli finds the time ...) 
 
 % every action potential detail
 
-% hard code the start and end of analysis regions and plot
-
-% correct issue with unreliable threshold detection
-
-% fix lazy alignment of rheobase plot
-
-% read protocol data from the other channel of the .tdms file
-
+% Tidy up action potential threshold detection. 
 
 %% Code
 
 % load file of interest
-%[file,path] = uigetfile('*.ma');
-%S = ephysIO(fullfile(path,file));
+[file,path] = uigetfile('*.ma'); % select file of interest
+clampfile = fullfile(path,file); % get full filepath of file
+S = ephysIO(clampfile);
 Time = S.array(:,1);
 Waves = S.array(:,2:end);
 
@@ -109,10 +82,18 @@ dlgTitle    = 'Run Analysis';
 dlgQuestion = 'Would you like to run the Current Step Analysis?';
 run = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
 
-close(fh) % close figure
+% close(fh) % close figure  <------- this will need to be moved. 
 
 if run == "Yes"
     disp('Performing Analysis, please wait ...')
+
+    % select region to search for action potentials
+    title('Select detection region')
+    [detection,~] = ginput(2);
+    detStart = detection(1)/S.xdiff; % start of detection in data points
+    detEnd = detection(2)/S.xdiff; % end of detection in data points
+    
+    close(fh) % close figure
 
 % preallocate pks, locs, w, p, numSpikes and mute error here
 warning('off','signal:findpeaks:largeMinPeakHeight');
@@ -132,7 +113,8 @@ for i = 1:size(Waves,2)
     % locs = index of peak
     % w = width
     % p = prominence
-    [pks{i},locs{i},w{i},p{i}] = findpeaks(Waves(:,i),...
+    % hard coded to only look for AP's between detStart and detEnd
+    [pks{i},locs{i},w{i},p{i}] = findpeaks(Waves(round(detStart):round(detEnd),i),...
         'MinPeakHeight',0,...
         'MinPeakProminence',0.01,...
         'MaxPeakWidth',0.02*10^4,...
@@ -146,43 +128,56 @@ end
 
 % plot whole of current step protocol
 fh = figure();
-fh.WindowState = 'maximized'; subplot(7,4,[1,5]); plot(Time,Waves*1000,'color','black')
+fh.WindowState = 'maximized'; subplot(7,4,[1,5]); plot(Time,Waves*1000,'color','black','HandleVisibility','off')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 ylabel('Membrane Potential (mV)');
 title('Current Step Waveform')
 ax = gca; xax = ax.XAxis; set(xax,'visible','off')
+hold on
+xline(detection(1),'linestyle','--','color','blue','linewidth',2,'HandleVisibility','off') % detection start
+xline(detection(2),'linestyle','--','color','blue','linewidth',2) % detection end
+hold off
+legend('Detection Region','linewidth',1)
 
-
-% plot the waveform of interest
-wavelength = Time(end);
-Hz = size(S.array,1)/wavelength;
-pA = linspace(steps(1),steps(2),size(Waves,2))';
-pA_waveform = zeros(size(Waves,1),size(Waves,2)); 
-pA_waveform(round(0.01*Hz):round(0.06*Hz),:) = -60; % initial test pulse
-for i = 1:size(pA,1)
-    pA_waveform(round(0.5*Hz):round(1.5*Hz),i) = pA(i); 
+% plot waveform of current step read from second channel of clampfit
+SI = ephysIO({clampfile,2}); % load in the current data
+x = SI.array(:,1); % x is time here
+pA_waveform = SI.array(:,2:end); % y is the array of current data
+base = mean (mean(pA_waveform(4001:16001,:))); % determine the baseline (intra-step)
+N = size(SI.array,2) - 1; % get the number of waves in the array (minus time)
+lo = dsearchn(x,detection(1)) + 1; % start of the test pulse
+hi = dsearchn(x,detection(2)) - 1; % end of the test pulse
+pA = zeros(1,N); % preallocate a blank series of steps
+for i = 1:N
+   pA(i) = mean (pA_waveform(round(lo+(detEnd-detStart)*0.1):...
+       round(hi-(detEnd-detStart)*0.1),i)); % fill the steps with the mean of each step
 end
-subplot(7,4,9); plot(Time,pA_waveform(:,:),'linewidth',1,'color','black')
+pA = fix((pA - base) * 1e+12); % round to zero, baseline subtract and put into pA
+subplot(7,4,9); plot(x,(pA_waveform-base)*1e12,'linewidth',1,'color','black','HandleVisibility','off')
 box off; set(gca,'linewidth',2); set(gcf,'color','white');
-xlabel('Time (s)'); ylabel('Command(pA)'); ylim([(steps(1)-50),(steps(2)+50)])
+xlabel('Time (s)'); ylabel('Command(pA)'); ylim([min(min(pA_waveform*1e12))-50,max(max(pA_waveform*1e12))+50])
 ax = gca; yax = ax.YAxis; set(yax,'TickDirection','out')
-
-% determine rheobase as the first amount of current to induce APs in the
-% first 25% of the current step rather than the first current step value to
-% elcit any AP at all. 
+hold on
+xline(detection(1),'linestyle','--','color','blue','linewidth',2,'HandleVisibility','off') % detection start
+xline(detection(2),'linestyle','--','color','blue','linewidth',2) % detection end
+hold off
 
 % First AP of interest values
 C = locs;
 idx = ~cellfun('isempty',C);
 outs = zeros(size(C));
 outs(idx) = cellfun(@(v)v(1),C(idx));
+for lp = 1:size(outs,1)
+    if outs(lp) > 0
+        outs(lp) = outs(lp) + detStart; % account for the detection zone
+    end
+end
 logicalIndexes =  outs < 27500 & outs > 1;
 wavenum_first = (size(locs,1)-(sum(logicalIndexes)-1)); % wave that the first action potential following stimulus injection occurs on
 subplot(7,4,[2,6,10]);
 plot(Time,Waves(:,wavenum_first)*1000,'color','red'); hold on; plot(Time,Waves(:,11)*1000,'color','black')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
 xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
-
 lgd = legend(char(string(pA(wavenum_first))),char(string(pA(11))),'linewidth',1);
 title(lgd,'Current (pA)')
 title('Exemplary Waves')
@@ -199,8 +194,8 @@ subplot(7,4,[3,7,11])
 plot(pA,numSpikes,'color','red','linewidth',3); box off; set(gcf,'color','white'); set(gca,'linewidth',2);
 title('Membrane Excitability'); xlabel('Current Step (pA)'); ylabel('Number of Action Potentials')
 hold on; xline(Rh,'--','linewidth',1.5); 
-txt_Rh_1 = ['\bf Rheobase:  ' num2str(Rh) ' pA \rightarrow'];
-text(Rh-100,8,txt_Rh_1);
+txt_Rh_1 = {['\bf Rheobase:  '] [num2str(Rh) ' pA  \rightarrow']};
+text(Rh-135,8,txt_Rh_1);
 
 %% Ih Sag Values
 % measured after a depolarising current injection of -100 pA from -65 mV
@@ -218,18 +213,19 @@ title(lgd,'Current (pA)')
 title('Ih Sag Calculation')
 hold on; plot(Time, Waves(:,2:10)*1000, 'color',[0.8,0.8,0.8])
 hold on; plot(Time,Waves(:,11)*1000,'color','black'); hold on; plot(Time,Waves(:,1)*1000,'color','red')
-%hold on; xline(1.5,'--'); xline(1.3,'--')
 
 % Calculate Ih Sag
 SS_start = 1.3/Time(2); 
 SS_end = 1.5/Time(2);
 % preallocate for loop variables
-y = zeros(1,11);
-x = zeros(1,11);
-SS_Value = zeros(1,11);
-Ih_Sag_Amp = zeros(1,11);
-Ih_Sag_Percentage = zeros(1,11);
-for i = 1:11
+% plotting should be done to where the current input is zero
+null_I = find(pA == 0);
+y = zeros(1,null_I);
+x = zeros(1,null_I);
+SS_Value = zeros(1,null_I);
+Ih_Sag_Amp = zeros(1,null_I);
+Ih_Sag_Percentage = zeros(1,null_I);
+for i = 1:null_I
     [y(i),x(i)] = min(Waves(20000:30000,i));
     SS_Value(i) = mean(Waves(SS_start:SS_end,i)) + 0.065;
     Ih_Sag_Amp(i) = ((SS_Value(i) - (y(i)+0.065)))*1000; % Sag amplitude in mV
@@ -238,12 +234,16 @@ end
 hold on; yline((SS_Value(1)-0.065)*1000,'--r'); yline((y(1)*1000),'--r');
 
 subplot(7,4,[18,22,26]);
-plot(pA(1:11),Ih_Sag_Percentage,'color','black','linewidth',3); box off; title('Ih Sag')
-set(gca,'linewidth',2); set(gcf,'color','white'); xlabel('Current Step (pA)'); ylabel('Ih Sag - Steady State Ratio (%)');
+plot(pA(1:null_I),Ih_Sag_Percentage,'color','black','linewidth',3); box off; title('Ih Sag')
+set(gcf,'color','white'); xlabel('Current Step (pA)'); ylabel('Ih Sag - Steady State Ratio (%)');
+set(gca,'linewidth',2)
+
 %% AP analysis
 
 % plot action potential
+warning('off','MATLAB:colon:nonIntegerIndex')
 AP_Window = Waves(outs(wavenum_first)-500:outs(wavenum_first)+500,wavenum_first)*1000;
+warning('on','MATLAB:colon:nonIntegerIndex')
 
 % Overshoot in mV
 [Overshoot,ind_o] = max(AP_Window);
@@ -252,14 +252,11 @@ AP_Window = Waves(outs(wavenum_first)-500:outs(wavenum_first)+500,wavenum_first)
 % Baseline
 Base = mean(AP_Window(1:350));
 
-% plot action potential waveform
-subplot(7,4,[20,24,28]); plot(AP_Window, gradient(AP_Window),'linewidth',2,'color','black')
-box off; title('Action Potential Waveform')
-set(gca,'linewidth',2); set(gcf,'color','white'); xlabel('Membrane Potential (mV)'); ylabel('dV/dt');
 
 % Action potential halfwidth
 % Halfwidth in ms
-subplot(7,4,[4,8,12]);
+figure;
+% subplot(7,4,[4,8,12]);
 [~,~,Halfwidth,~] = findpeaks(AP_Window-Base,'MinPeakHeight',0,...
         'MaxPeakWidth',0.02*10^4,...
         'MinPeakDistance',600,...
@@ -279,6 +276,8 @@ Halfwidth = (Halfwidth*Time(2))*1000; % Halfwidth in ms
 % Action Potential Threshold
 % as defined by the first peak of the third derivative
 % (or second derivative of dv/dt as per Serkeli et al., 2004)
+
+
 % what I actually prefer is when the dv/dt surpasses 4mV/ms (dv/dt > 1)
 N = diff(AP_Window(1:ind_o-20)); % period start to just before the peak
 [closestValue, closestIndex] = min(abs(N - 1.'));
@@ -286,8 +285,7 @@ hold on; plot(closestIndex,AP_Window(closestIndex)-Base,'or')
 ind_t = closestIndex; % threshold index
 %hold on; plot(gradient(gradient(gradient(AP_Window)))*100-20);
 % plot the differntial below the trace
-hold on; plot(diff(AP_Window)*1-20);
-hold on; yline(closestValue-20) % threshold (dv/dt)
+hold on; plot(diff(diff(AP_Window)*10-20));
 Threshold = AP_Window(ind_t); % in mV
 
 %hold on; plot(thresh_ind,Threshold-Base,'Or') % plot threshold
@@ -329,6 +327,10 @@ legend('trace','peak', ...
     'rise','fall',...
     'Location','northeast')
 
+% plot action potential waveform
+subplot(7,4,[20,24,28]); plot(AP_Window, gradient(AP_Window),'linewidth',2,'color','black')
+box off; title('Action Potential Waveform')
+set(gca,'linewidth',2); set(gcf,'color','white'); xlabel('Membrane Potential (mV)'); ylabel('dV/dt');
 
 %% Input Resistance
 % Calculates input resistance in MOhm from the difference in voltage, divided by
@@ -374,7 +376,7 @@ subAP_Vm = mean(Waves(Vm_start:Vm_end,1:wavenum_first-1));
 
 
 % plot the subAP_Vm values
-figure(fh2); subplot(1,2,1)
+fh2 = figure; subplot(1,2,1)
 plot(Time,Waves(:,1),'color','black'); hold on
 plot(Time,Waves(:,2:wavenum_first-1),'color','black','HandleVisibility','off')
 xline(1,'--r'); xline(1.5,'--r','HandleVisibility','off')
