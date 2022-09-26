@@ -53,6 +53,10 @@ function [output] = IStep
 
 % Tidy up action potential threshold detection. 
 
+% update baseline selection to be user input also
+
+% detection region should also plot the command waveform
+
 %% Code
 
 % load file of interest
