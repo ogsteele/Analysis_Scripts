@@ -102,8 +102,9 @@ Halfwidth = (Halfwidth*Time(2))*1000; % Halfwidth in ms
 % dv/dt surpasses 4mV/ms (dv/dt > 1)
 N = diff(AP_Window(1:ind_o-20)); % period start to just before the peak
 [closestValue, closestIndex] = min(abs(N - 1.'));
+hold on; plot((diff(AP_Window))*5-20)
 hold on; plot(closestIndex,AP_Window(closestIndex)-Base,'or')
-ind_t = closestIndex; % threshold index=
+ind_t = closestIndex; % threshold index
 Threshold = AP_Window(ind_t); % in mV
 
 hold on; plot((ind_a+ind_o),Afterhyperpolarisation-Base,'* y') % plot after
@@ -143,7 +144,7 @@ legend('trace','peak', ...
     'hyperpolar.',...
     'rise','fall',...
     'Location','northeast')
-%% AP analysis - Surpasses 4 mV/ms
+%% AP analysis - local min of the peak of the third derivative
 
 
 % Overshoot in mV
@@ -168,7 +169,7 @@ findpeaks(AP_Window-Base,'MinPeakHeight',0,...
         'WidthReference','halfheight',...
         'Annotate','extent');
 box off; grid off; xlabel('Data Points'); ylabel('Adjusted membrane potential');
-set(gca,'linewidth',2); set(gcf,'color','white'); title('triple ndiff peak');
+set(gca,'linewidth',2); set(gcf,'color','white'); title('local min, total max, triple ndiff');
 ylim([-40 120])
 Halfwidth = (Halfwidth*Time(2))*1000; % Halfwidth in ms
 
@@ -181,13 +182,22 @@ for diffnum = 1:3
 end
 
 % plot the differntial below the trace
-hold on; plot((diffWin)/100-20);
-[val,ind] = max(diffWin); xline(ind)
+y = smooth(diffWin)*5e-12-20;
+hold on; plot(y); % plotting of the actual triple diff trace
+x = 1:size(y,1);
+TF = islocalmin(y);
 
-ind_t = closestIndex; % threshold index
-% plot the differntial below the trace
-Threshold = AP_Window(ind_t); % in mV
+% discover the local min to the left of the total max
+TF_ind = find(TF); % return array of all the local minima index
+[val,ind] = max(y); % find the max of y
+neg_idx = (TF_ind - ind) < 0; % return a logical index of the the negative (left shifted) min indexes
+max_neg = max(TF_ind(neg_idx)); % return the largest index to the left of the overall maximum
+ind_t = max_neg; % threshold index
+Threshold = AP_Window(ind_t); % in mV <-- to go to the output
+hold on; plot(ind_t,y(ind_t),'*b') % plot the local min
+hold on; plot(ind_t,AP_Window(ind_t)-Base,'or') % plot the threshold
 
+% plot the afterhyperpolarisation
 hold on; plot((ind_a+ind_o),Afterhyperpolarisation-Base,'* y') % plot after
 
 % recalculate (and overwrite) the amplitude now you have a threshold
@@ -220,8 +230,8 @@ hold on; plot((fall_20_ind:fall_80_ind),AP_Window(fall_20_ind:fall_80_ind)-Base,
 
 legend('trace','peak', ...
     'amplitude','halfwidth', ...
-    'border','threshold', ...
-    'dv/dt',...
+    'border', ...
+    'triple ndiff','local minima','threshold',...
     'hyperpolar.',...
     'rise','fall',...
     'Location','northeast')
