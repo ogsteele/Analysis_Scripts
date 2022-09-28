@@ -182,14 +182,16 @@ for diffnum = 1:3
 end
 
 % plot the differntial below the trace
-y = smooth(diffWin)*5e-12-20;
+y = smooth(smooth(diffWin))*5e-12-20;
 hold on; plot(y); % plotting of the actual triple diff trace
 x = 1:size(y,1);
-TF = islocalmin(y);
+TF = islocalmin(y,'MinSeparation',25); % works for the slower action potential, not faster
+% perhaps consider 'MinSeperation' val as a function of speed of action
+% potential? Maybe related halfwidth.
 
 % discover the local min to the left of the total max
 TF_ind = find(TF); % return array of all the local minima index
-[val,ind] = max(y); % find the max of y
+[val,ind] = max(y(1:end-5)); % find the max of y
 neg_idx = (TF_ind - ind) < 0; % return a logical index of the the negative (left shifted) min indexes
 max_neg = max(TF_ind(neg_idx)); % return the largest index to the left of the overall maximum
 ind_t = max_neg; % threshold index
