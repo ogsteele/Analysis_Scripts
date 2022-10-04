@@ -3,7 +3,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 % Current step protocol analysis, featuring user defined input at various
 % points
 %
-% IStep v1.2 (last updated: 04/10/2022)
+% IStep v1.2.1 (last updated: 04/10/2022)
 % Author: OGSteele
 %
 % example use;
@@ -66,7 +66,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   - included the use of ephysIO inside the script for ease of use
 %   - tidied up description
 
-% 03.10.22 [OGS]
+% 04.10.22 [OGS]
 %   - implemented robust threshold detection (initial peak of 2div)
 %   - tidied up devThresh and IStep as a package
 %   - introduced LPF_Hz and winSize_ms input arguments
@@ -74,15 +74,13 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   - tidied up labelling on subgraphs 3 (Rh) and 7 (IR)
 %   - updated baseline selection to be a user input
 %   - plotted detection regions on the overall traces (subgraph 1)
-
+%   - corrected AP Analysis Labelling
+%   - adjusted minPeakHeight in AP Analysis to prevent double spikes
+%   - included 7 pole medianf to decrease impact of fast noise in Ih Sag
 
 %% To do list (when Oli finds the time ...) 
 
 % every action potential detail
-
-% method of detecting peaks that is less sensitive to spiky noise in Ih Sag
-
-% arbitrary second peak detection in AP_analysis
 
 %% Code
 
@@ -114,32 +112,31 @@ dlgTitle    = 'Run Analysis';
 dlgQuestion = 'Would you like to run the Current Step Analysis?';
 run = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
 
-% close(fh) % close figure  <------- this will need to be moved. 
-
 if run == "Yes"
     disp('Performing Analysis, please wait ...')
 
     % select region to search for action potentials
     title('Select detection region')
     [detection,~] = ginput(2);
-    detStart = detection(1)/S.xdiff; % start of detection in data points
-    detEnd = detection(2)/S.xdiff; % end of detection in data points
+    detStart = round(detection(1)/S.xdiff); % start of detection in data points
+    detEnd = round(detection(2)/S.xdiff); % end of detection in data points
     xline(detection(1),'linestyle','--','color','blue','linewidth',2,'HandleVisibility','off')
     xline(detection(2),'linestyle','--','color','blue','linewidth',2)
 
     % select region to detect the baseline from
     title('Select baseline region')
     [baseline,~] = ginput(2);
-    baseStart = baseline(1)/S.xdiff; % start of detection in data points
-    baseEnd = baseline(2)/S.xdiff; % end of detection in data points
+    baseStart = round(baseline(1)/S.xdiff); % start of detection in data points
+    baseEnd = round(baseline(2)/S.xdiff); % end of detection in data points
     xline(baseline(1),'linestyle','--','color','green','linewidth',2,'HandleVisibility','off')
     xline(baseline(2),'linestyle','--','color','green','linewidth',2)
     legend('Recording Data','AP Detection Region','Baseline Detection Region','linewidth',1)
     title('Detection Regions')
 
-    % pause for 3 seconds to allow user to visualise regions, then close
-    pause(3)
-    close(fh) % close figure
+    % pause for 2 seconds to allow user to visualise regions, then close
+    pause(2)
+    % close figure
+    close(fh)
 
 
     % preallocate pks, locs, w, p, numSpikes and mute error here
@@ -254,46 +251,51 @@ if run == "Yes"
     % measured after a depolarising current injection of -100 pA from -65 mV
     % Calculates both Amplitude (relative to steady state) and ratio (to steady state)
     
-    % median filter (49 pole?!) Ih Sag values to remove any noise
-    %for i = 1:size(Waves,2)
-    %    mf_Waves(:,i) = medianf(Waves(:,i),Time,49);
-    %end
-
+    % median filter Ih Sag values to remove any noise
+    for i = 1:size(Waves,2)
+        mf_Waves(:,i) = medianf(Waves(:,i),Time,9);
+    end
 
     % Plot Ih Sag Waves
-    subplot(7,4,[17,21,25]); plot(Time,Waves(:,11)*1000,'color','black'); hold on; plot(Time,Waves(:,1)*1000,'color','red')
+    subplot(7,4,[17,21,25]); % creat subplot
+    steadyStateWaveNum = dsearchn(pA',0);% find the wave number with the closest to zerohold on; 
+    plot(Time,mf_Waves(:,2:steadyStateWaveNum-1)*1000, 'color',[0.8,0.8,0.8],'HandleVisibility','off') % plot the other of the waves in gray in the background
+    hold on; plot(Time,mf_Waves(:,steadyStateWaveNum)*1000,'color','black'); % plot steady state waveth wave (ie, zero input) 
+    hold on; plot(Time,mf_Waves(:,1)*1000,'color','red') % plot first wave in red state waveth wave (ie, zero input) 
     box off; set(gcf,'color','white'); set(gca,'linewidth',2)
     xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
     lgd = legend(char(string(pA(11))),char(string(pA(1))),...
         'linewidth',1,...
-        'location','northeast',...
+        'location','northwest',...
         'AutoUpdate','off');
     title(lgd,'Current (pA)')
     title('Ih Sag Calculation')
-    hold on; plot(Time,Waves(:,2:10)*1000, 'color',[0.8,0.8,0.8])
-    hold on; plot(Time,Waves(:,11)*1000,'color','black'); hold on; plot(Time,Waves(:,1)*1000,'color','red')
     
-    % Calculate Ih Sag
-    SS_start = 1.3/Time(2); 
-    SS_end = 1.5/Time(2);
+    % Calculate Ih Sag 
+    % steady state during the final quarter and sag during the first third
+    detDur = detEnd-detStart; % calculate detection duration
+    SS_start = round(detEnd - (detDur/4)); % start of the steady state zone
+    SS_end = detEnd; % end of steady state zone
+    sagStart = detStart; % start of sag region
+    sagEnd = round(detStart + (detDur/3)); % end of sag region
     % preallocate for loop variables
     % plotting should be done to where the current input is zero
-    null_I = find(pA == 0);
-    y = zeros(1,null_I);
-    x = zeros(1,null_I);
-    SS_Value = zeros(1,null_I);
-    Ih_Sag_Amp = zeros(1,null_I);
-    Ih_Sag_Percentage = zeros(1,null_I);
-    for i = 1:null_I
-        [y(i),x(i)] = min(Waves(20000:30000,i));
-        SS_Value(i) = mean(Waves(SS_start:SS_end,i)) + 0.065;
+    y = zeros(1,steadyStateWaveNum);
+    x = zeros(1,steadyStateWaveNum);
+    SS_Value = zeros(1,steadyStateWaveNum);
+    Ih_Sag_Amp = zeros(1,steadyStateWaveNum);
+    Ih_Sag_Percentage = zeros(1,steadyStateWaveNum);
+    for i = 1:steadyStateWaveNum
+        [y(i),x(i)] = min(mf_Waves(sagStart:sagEnd,i));
+        SS_Value(i) = mean(mf_Waves(SS_start:SS_end,i)) + 0.065;
         Ih_Sag_Amp(i) = ((SS_Value(i) - (y(i)+0.065)))*1000; % Sag amplitude in mV
         Ih_Sag_Percentage(i) = ((SS_Value(i)/y(i)))*100; % Sag percentage
     end 
     hold on; yline((SS_Value(1)-0.065)*1000,'--r'); yline((y(1)*1000),'--r');
+    ylim([(min(y)*1000) - 20 , max(max(Waves(:,1:steadyStateWaveNum))*1000) + 20]); % make sure graph fits neatly
     
     subplot(7,4,[18,22,26]);
-    plot(pA(1:null_I),Ih_Sag_Percentage,'color','black','linewidth',3); box off; title('Ih Sag')
+    plot(pA(1:steadyStateWaveNum),Ih_Sag_Percentage,'color','black','linewidth',3); box off; title('Ih Sag')
     set(gcf,'color','white'); xlabel('Current Step (pA)'); ylabel('Ih Sag - Steady State Ratio (%)');
     set(gca,'linewidth',2)
     
@@ -323,12 +325,12 @@ if run == "Yes"
     % Action potential halfwidth
     % Halfwidth in ms
     subplot(7,4,[4,8,12]);
-    [~,~,Halfwidth,~] = findpeaks(AP_Window-Base,'MinPeakHeight',0,...
+    [~,~,Halfwidth,~] = findpeaks(AP_Window-Base,'MinPeakHeight',15,...
             'MaxPeakWidth',0.02*10^4,...
             'MinPeakDistance',600,...
             'WidthReference','halfheight',...
             'Annotate','extent');
-    findpeaks(AP_Window-Base,'MinPeakHeight',0,...
+    findpeaks(AP_Window-Base,'MinPeakHeight',15,...
             'MaxPeakWidth',0.02*10^4,...
             'MinPeakDistance',600,...
             'WidthReference','halfheight',...
@@ -349,8 +351,6 @@ if run == "Yes"
     % LPF_Hz Note <-- faster the action potential, lower the threshold
     % 330 works well for organotypic, 1000 works well for iPSCs
     
-    %LPF_Hz = inputdlg('Choose LPF cut off (Hz)','LPF_Hz',1,{'lower cutoff for fast APs'});
-    %LPF_Hz = str2num(cell2mat(LPF_Hz));
     
     % plot the differntial below the trace
     y = filter1(diffWin,Time(1:size(diffWin,1)),0,LPF_Hz)*5e-8-20; 
@@ -360,14 +360,14 @@ if run == "Yes"
     [~,dd_locs,~,~] = findpeaks(y,"MinPeakProminence",0.5); 
     % make sure to understand peak prominence properly
     
-    % discover the local min to the left of the total max
+    % Discover the intial peak of the ndiff^2 trace
     ind_t = dd_locs(1); % threshold index is the first peak detected
     Threshold = AP_Window(ind_t); % in mV <-- to go to the output
-    hold on; plot(ind_t,y(ind_t),'*b') % plot the initial peak
-    hold on; plot(ind_t,AP_Window(ind_t)-Base,'or') % plot the threshold
+    hold on; plot(ind_t,y(ind_t),'*b','LineWidth',3) % plot the initial peak
+    hold on; plot(ind_t,AP_Window(ind_t)-Base,'or','LineWidth',3) % plot the threshold
     
     % plot the afterhyperpolarisation
-    hold on; plot((ind_a+ind_o),Afterhyperpolarisation-Base,'* y') % plot after
+    hold on; plot((ind_a+ind_o),Afterhyperpolarisation-Base,'* y','LineWidth',3) % plot after
     
     % recalculate (and overwrite) the amplitude now you have a threshold
     Amplitude = abs((Overshoot-Base)-(Threshold-Base)); % in mV
@@ -382,7 +382,7 @@ if run == "Yes"
     rise_20_ind = closestIndex_20 + ind_t;
     rise_80_ind = closestIndex_80 + ind_t;
     Rise = mean(gradient(AP_Window(rise_20_ind:rise_80_ind)));
-    hold on; plot((rise_20_ind:rise_80_ind),AP_Window(rise_20_ind:rise_80_ind)-Base,'linewidth',2)
+    hold on; plot((rise_20_ind:rise_80_ind),AP_Window(rise_20_ind:rise_80_ind)-Base,'linewidth',3,'color','black')
     
     % Repolarisation Rate
     
@@ -395,11 +395,10 @@ if run == "Yes"
     fall_20_ind = closestIndex_80 + ind_o;
     fall_80_ind = closestIndex_20 + ind_o;
     Fall = mean(gradient(AP_Window(fall_20_ind:fall_80_ind)));
-    hold on; plot((fall_20_ind:fall_80_ind),AP_Window(fall_20_ind:fall_80_ind)-Base,'linewidth',2)
+    hold on; plot((fall_20_ind:fall_80_ind),AP_Window(fall_20_ind:fall_80_ind)-Base,'linewidth',3,'color','red')
     
     legend('trace','peak', ...
         'amplitude','halfwidth', ...
-        'border', ...
         'double ndiff','initial max','threshold',...
         'hyperpolar.',...
         'rise','fall',...
@@ -416,10 +415,10 @@ if run == "Yes"
     % waves
     
     % plot waves used for input resistance calculation
-    subplot(7,4,[19,23,27]); plot(Time,Waves(:,1)*1000,'color','black'); hold on; plot(Time,Waves(:,2)*1000,'color','red')
+    subplot(7,4,[19,23,27]); plot(Time,Waves(:,1)*1000,'color','black'); hold on; plot(Time,Waves(:,3)*1000,'color','red')
     box off; set(gcf,'color','white'); set(gca,'linewidth',2)
     xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
-    lgd = legend(char(string(pA(1))),char(string(pA(2))),...
+    lgd = legend(char(string(pA(1))),char(string(pA(3))),...
         'linewidth',1,...
         'location','southeast',...
         'AutoUpdate','off');
@@ -429,20 +428,18 @@ if run == "Yes"
     hold on; xline(1.5,'--'); xline(1.3,'--')
     
     % Calculate Input Resistance in MegaOhms
-    IR_start = 1.3/Time(2); 
-    IR_end = 1.5/Time(2);
-    deltaV = abs(mean(Waves(IR_start:IR_end,1)) - mean(Waves(IR_start:IR_end,2))); % Delta_Voltage (Volts)
-    I = 20e-12; % I (Amps)
+    IR_start = round(detEnd - (detDur/4)); % start of the steady state zone
+    IR_end = detEnd; % end of steady state zone
+    deltaV = abs(mean(Waves(IR_start:IR_end,1)) - mean(Waves(IR_start:IR_end,3))); % Delta_Voltage (Volts)
+    I = (pA(3)-pA(1))*1e-12; % I (Amps)
     R = deltaV / I; % R (Ohms)
     IR = R / 1e6; % R (MegaOhms)
     txt = {['\bf Input Resistance: '],[num2str(IR) ' M\Omega \rightarrow']};
-    %txt_2 = [num2str(IR) ' M\Omega \rightarrow'];
     hold on; text(0.7,(mean(Waves(IR_start:IR_end,2))*1000) + 15,txt)
-    %hold on; text(0.8,(mean(Waves(IR_start:IR_end,2))*1000) + 5,txt_2)
     
     %% Sub-AP Vm values
-    Vm_start = 1/Time(2); 
-    Vm_end = 1.5/Time(2);
+    Vm_start = round(detEnd - (detDur/2)); % start of the steady state zone
+    Vm_end = detEnd; % end of steady state zone
     
     C = locs;
     idx = ~cellfun('isempty',C);
@@ -589,7 +586,7 @@ else
 end
 
 
-
+end
 %% Dependencies
 % ephysIO
 % Function File: ephysIO
@@ -3931,4 +3928,3 @@ end
 end
 
 %--------------------------------------------------------------------------
-end
