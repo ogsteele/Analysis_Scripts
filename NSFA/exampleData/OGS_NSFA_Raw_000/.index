@@ -1,0 +1,292 @@
+.:
+    __timestamp__: 1657121134.449
+    dirType: 'ProtocolSequence'
+    protocol:
+        params: [('protocol', 'repetitions', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49], [])]
+        analysis:
+        conf:
+            continuous: False
+            cycleTime: 5.0
+            loop: False
+            duration: 0.75
+            repetitions: 50
+            leadTime: 0.01
+            loopCycleTime: 0.3
+    devices:
+        Clamp1:
+            bottomPlotWidget:
+                yGridCheck: False
+                logXCheck: False
+                clipToViewCheck: True
+                maxTracesCheck: False
+                autoDownsampleCheck: True
+                peakRadio: True
+                downsampleSpin: 1
+                pointsGroup: True
+                gridAlphaSlider: 128
+                maxTracesSpin: 0
+                averageGroup: False
+                alphaGroup: True
+                logYCheck: False
+                xGridCheck: False
+                autoAlphaCheck: False
+                alphaSlider: 1000
+                meanRadio: False
+                paramList:
+                subsampleRadio: False
+                fftCheck: False
+                autoPointsCheck: True
+                downsampleCheck: True
+                forgetTracesCheck: False
+                view:
+                    wheelScaleFactor: -0.125
+                    viewRange: [[-0.03727074083257731, 0.9734053470562035], [-0.13515581248362515, 0.016469116765435804]]
+                    autoPan: [False, False]
+                    limits:
+                        xRange: [None, None]
+                        yLimits: [None, None]
+                        yRange: [None, None]
+                        xLimits: [None, None]
+                    enableMenu: True
+                    mouseEnabled: [True, True]
+                    linkedViews: [u'Clamp1.Input', None]
+                    mouseMode: 3
+                    background: None
+                    yInverted: False
+                    autoVisibleOnly: [False, False]
+                    targetRange: [[-0.03727074083257731, 0.9734053470562035], [-0.13515581248362515, 0.016469116765435804]]
+                    xInverted: False
+                    autoRange: [False, False]
+                    aspectLocked: False
+            primarySignalCheck: False
+            topPlotWidget:
+                yGridCheck: False
+                logXCheck: False
+                clipToViewCheck: True
+                maxTracesCheck: False
+                autoDownsampleCheck: True
+                peakRadio: True
+                downsampleSpin: 1
+                pointsGroup: True
+                gridAlphaSlider: 128
+                maxTracesSpin: 0
+                averageGroup: False
+                alphaGroup: True
+                logYCheck: False
+                xGridCheck: False
+                autoAlphaCheck: False
+                alphaSlider: 1000
+                meanRadio: False
+                paramList:
+                    protocol.repetitions: False
+                subsampleRadio: False
+                fftCheck: False
+                autoPointsCheck: True
+                downsampleCheck: True
+                forgetTracesCheck: False
+                view:
+                    wheelScaleFactor: -0.125
+                    viewRange: [[-0.03727074083257731, 0.9734053470562035], [-1.7895805904217615e-08, 1.1241653613579842e-08]]
+                    autoPan: [False, False]
+                    limits:
+                        xRange: [None, None]
+                        yLimits: [None, None]
+                        yRange: [None, None]
+                        xLimits: [None, None]
+                    enableMenu: True
+                    mouseEnabled: [True, True]
+                    linkedViews: [None, None]
+                    mouseMode: 3
+                    background: None
+                    yInverted: False
+                    autoVisibleOnly: [False, False]
+                    targetRange: [[-0.03727074083257731, 0.9734053470562035], [-1.7895805904217615e-08, 1.1241653613579842e-08]]
+                    xInverted: False
+                    autoRange: [False, 1.0]
+                    aspectLocked: False
+            vcModeRadio: True
+            splitter: '%00%00%00%FF%00%00%00%00%00%00%00%02%00%00%00Z%00%00%00E%01%00%00%00%05%01%00%00%00%02'
+            holdingCheck: True
+            holdingSpin: -0.065
+            primarySignal: 'Membrane Current'
+            primaryGainSpin: 1
+            secondaryGainSpin: 1
+            splitter_2: '%00%00%00%FF%00%00%00%00%00%00%00%02%00%00%010%00%00%00d%01%00%00%00%05%01%00%00%00%01'
+            i0ModeRadio: False
+            waveGeneratorWidget:
+                function: 'pulse(25*ms, 10*ms, -0.01) + \npulse(100*ms, 80*ms, -0.035) + \npulse(180.1*ms, 500*ms, 0.05)'
+                autoUpdate: False
+                stimuli:
+                    Pulse:
+                        start:
+                            sequence: 'off'
+                            value: 0.025
+                        length:
+                            sequence: 'off'
+                            value: 0.01
+                        amplitude:
+                            sequence: 'off'
+                            value: -0.01
+                        sum:
+                            affect: 'length'
+                            sequence: 'off'
+                            value: -0.0001
+                        type: 'pulse'
+                    Pulse2:
+                        start:
+                            sequence: 'off'
+                            value: 0.1
+                        length:
+                            sequence: 'off'
+                            value: 0.08
+                        amplitude:
+                            sequence: 'off'
+                            value: -0.035
+                        sum:
+                            affect: 'length'
+                            sequence: 'off'
+                            value: -0.0028000000000000004
+                        type: 'pulse'
+                    Pulse3:
+                        start:
+                            sequence: 'off'
+                            value: 0.1801
+                        length:
+                            sequence: 'off'
+                            value: 0.5
+                        amplitude:
+                            sequence: 'off'
+                            value: 0.05
+                        sum:
+                            affect: 'length'
+                            sequence: 'off'
+                            value: 0.025
+                        type: 'pulse'
+                params:
+                advancedMode: False
+            icModeRadio: False
+            primarySignalCombo: u'Membrane Current'
+            secondaryGainCheck: False
+            primaryGainCheck: True
+            secondarySignalCheck: False
+            mode: 'VC'
+            secondarySignalCombo: u'Membrane Potential'
+            secondarySignal: 'Membrane Potential'
+        DAQ:
+            butterworthStopband: 40000.0
+            denoiseThreshold: 4.0
+            denoiseMethod: u'None'
+            downsample: 1
+            filterMethod: u'None'
+            butterworthPassband: 20000.0
+            butterworthPassDB: 3.0
+            denoiseWidth: 1
+            butterworthStopDB: 40.0
+            rate: 40000.0
+            butterworthBidirectional: False
+            besselOrder: 4
+            triggerDevice: u'No Trigger'
+            besselBidirectional: False
+            besselCutoff: 20000.0
+    sequenceParams:
+        ('protocol', 'repetitions'): [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49]
+000:
+    __timestamp__: 1657121134.46
+001:
+    __timestamp__: 1657121134.469
+002:
+    __timestamp__: 1657121134.476
+003:
+    __timestamp__: 1657121134.487
+004:
+    __timestamp__: 1657121134.504
+005:
+    __timestamp__: 1657121134.518
+006:
+    __timestamp__: 1657121134.557
+007:
+    __timestamp__: 1657121134.567
+008:
+    __timestamp__: 1657121134.577
+009:
+    __timestamp__: 1657121134.587
+010:
+    __timestamp__: 1657121134.597
+011:
+    __timestamp__: 1657121134.605
+012:
+    __timestamp__: 1657121134.614
+013:
+    __timestamp__: 1657121134.625
+014:
+    __timestamp__: 1657121134.634
+015:
+    __timestamp__: 1657121134.642
+016:
+    __timestamp__: 1657121134.652
+017:
+    __timestamp__: 1657121134.665
+018:
+    __timestamp__: 1657121134.673
+019:
+    __timestamp__: 1657121134.681
+020:
+    __timestamp__: 1657121134.715
+021:
+    __timestamp__: 1657121134.726
+022:
+    __timestamp__: 1657121134.735
+023:
+    __timestamp__: 1657121134.743
+024:
+    __timestamp__: 1657121134.752
+025:
+    __timestamp__: 1657121134.763
+026:
+    __timestamp__: 1657121134.775
+027:
+    __timestamp__: 1657121134.785
+028:
+    __timestamp__: 1657121134.797
+029:
+    __timestamp__: 1657121134.808
+030:
+    __timestamp__: 1657121134.817
+031:
+    __timestamp__: 1657121134.83
+032:
+    __timestamp__: 1657121134.84
+033:
+    __timestamp__: 1657121134.849
+034:
+    __timestamp__: 1657121134.861
+035:
+    __timestamp__: 1657121134.871
+036:
+    __timestamp__: 1657121134.881
+037:
+    __timestamp__: 1657121134.891
+038:
+    __timestamp__: 1657121134.903
+039:
+    __timestamp__: 1657121134.912
+040:
+    __timestamp__: 1657121134.922
+041:
+    __timestamp__: 1657121134.934
+042:
+    __timestamp__: 1657121134.944
+043:
+    __timestamp__: 1657121134.977
+044:
+    __timestamp__: 1657121134.986
+045:
+    __timestamp__: 1657121134.999
+046:
+    __timestamp__: 1657121135.009
+047:
+    __timestamp__: 1657121135.019
+048:
+    __timestamp__: 1657121135.03
+049:
+    __timestamp__: 1657121135.041
