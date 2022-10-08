@@ -23,7 +23,7 @@ Waves = S1.array(:,2:end);
 Command = S2.array(:,2:end);
 
 % plot figures
-figure; plot(Time,Waves,'color','black','HandleVisibility','off')
+figure; fw = plot(Time,Waves,'color','black','HandleVisibility','off');
 box off; set(gcf,'color','white'); set(gca,'linewidth',2);
 xlabel('Time (s)'); ylabel('Units (A or V)'); title('Channel 1');
 

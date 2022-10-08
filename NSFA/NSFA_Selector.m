@@ -18,7 +18,7 @@ quickfig
 close(gcf)
 
 % adjust axis label to make sense
-xlabel('Current (A)')
+ylabel('Current (A)')
 
 % close spare fig and zoom into the area of interest and hit enter
 disp('Close spare figure if needed and zoom into trace, before hitting Enter')
@@ -89,7 +89,7 @@ for i =  1:size(Waves,2)
         peakLogical(i) = false;
     end
 end
-hold on; plot(ind(1)*S1.xdiff,val(1),'*r','DisplayName','Peak Amplitude')
+hold on; pc = plot(ind(1)*S1.xdiff,val(1),'*r','DisplayName','Peak Amplitude');
 
 % convert peakLogical to a logical
 peakLogical = logical(peakLogical)';
@@ -99,18 +99,46 @@ selectWaves = Waves(:,peakLogical);
 
 % pull xlim and ylim from gcf
 yl = ylim; xl = xlim;
-title('Raw Waves');
+title('NSFA Selector.m output');
 
-% plot select waves into a new graph on the same axis limits
-figure; 
-plot(Time,selectWaves,'color','black')
-xlim(xl); ylim(yl);
-box off; set(gcf,'color','white'); set(gca,'linewidth',2);
-xlabel('Time (s)'); ylabel('Current (A)'); title('Selected Waves');
+% replot with old and new in different styles
+delete(fw)
+plot(Time,Waves,'color','black','linestyle','--','HandleVisibility','off')
+plot(Time,selectWaves,'color','black','linewidth',1.5,'HandleVisibility','off')
+plot(nan, nan, 'color', 'black', 'linestyle', '--','DisplayName','Deleted Traces');
+plot(nan, nan, 'color', 'black', 'linewidth', 2, 'DisplayName','Selected Traces');
 
-% save the new file
+% replot with the circles on the top
+delete(pc)
+for i = 1:size(peakLogical,2)
+    if peakLogical(i) == true
+        plot(ind(i)*S1.xdiff,val(i),'*r','linewidth',2,'HandleVisibility','off')
+    end
+end
+L1 = find(peakLogical, 1, 'first');
+plot(ind(L1)*S1.xdiff,val(L1),'*r','linewidth',2,'DisplayName','Peak Amplitude')
+
+% save the new file (complete)
 cd(path); cd ..; % navigate to one dir above the file recs
 splitfile = split(clampfile,filesep);
 savefile = [char(splitfile(end-2)) '.phy'];
 new_array = [Time,selectWaves];
 ephysIO(savefile,new_array,S1.xunit,S1.yunit)
+
+% save another file that only has the region of interest
+savefile = [char(splitfile(end-2)) '_ROI.phy'];
+start_t = round(0.178/S1.xdiff);
+end_t = round(0.195/S1.xdiff); 
+w = selectWaves(start_t:end_t,:);
+t = Time(1:size(w,1));
+ephysIO(savefile,[t w],S1.xunit,S1.yunit)
+
+% save the first figure
+saveFigName = char(splitfile(end-2));
+savefig(saveFigName)
+
+% plot the ROI
+figure; plot(t,w,'color','black')
+box off; set(gcf,'color','white'); set(gca,'linewidth',2);
+xlabel('Time (s)'); ylabel('Current (A)'); title('Selected Waves');
+

@@ -63,7 +63,7 @@
 %     Author: Andrew Charles Penn
 %     https://www.researchgate.net/profile/Andrew_Penn/
 
-
+% delete diary file
 if exist('diary','file') == 2
  diary('off');
  delete('diary');
