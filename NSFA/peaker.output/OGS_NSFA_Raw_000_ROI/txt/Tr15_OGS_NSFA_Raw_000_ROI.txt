@@ -1,0 +1,67 @@
+
+Data matrix filename (excluding extension): 
+C:\Users\bsms9vyk\Documents\Github\Analysis_Scripts\NSFA\exampleData\OGS_NSFA_Raw_000\OGS_NSFA_Raw_000_ROI.phy
+
+Trace number: 
+
+    15
+
+
+The settings used are the same as those documented in the parameters file
+
+Actual cut-off of the binomial filter (-3 dB, in kHz): 
+
+          7.1
+
+
+Number of peaks: 
+
+     1
+
+
+Peak Time (in ms): 
+
+            3
+
+
+Peak Current (in pA): 
+
+       -25359
+
+
+Baseline Time (in ms): 
+
+        2.175
+
+
+Baseline Current (in pA): 
+
+       2622.8
+
+
+Relative Peak Current (in pA): 
+
+       -27982
+
+
+Peak 20-80 percent rise time (in ms): 
+
+      0.31912
+
+
+Peak rising slope (in nA/ms): 
+
+       63.924
+
+
+Half-amplitude decay time (in ms): 
+
+         0.55
+
+
+Half-width (in ms): 
+
+       1.0171
+
+
+

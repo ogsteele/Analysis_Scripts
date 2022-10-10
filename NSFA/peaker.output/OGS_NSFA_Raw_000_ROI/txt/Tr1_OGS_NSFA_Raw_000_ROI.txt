@@ -1,0 +1,95 @@
+
+Data matrix filename (including extension): C:\Users\bsms9vyk\Documents\Github\Analysis_Scripts\NSFA\exampleData\OGS_NSFA_Raw_000\OGS_NSFA_Raw_000_ROI.phy
+
+Number of traces in this file: 
+    23
+
+
+Select the trace number for this analysis (default is all): all
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('all')" style="font-weight:bold">all</a>
+Not enough input arguments.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('peaker', 'C:\Users\bsms9vyk\Documents\Github\Analysis_Scripts\NSFA\peaker.m', 139)" style="font-weight:bold">peaker</a> (<a href="matlab: opentoline('C:\Users\bsms9vyk\Documents\Github\Analysis_Scripts\NSFA\peaker.m',139,0)">line 139</a>)
+  Tr=input(sprintf('\nSelect the trace number for this analysis (default is all): '));
+} 
+
+Select the trace number for this analysis (default is all): 
+
+Trace number: 
+
+     1
+
+
+The sampling frequency of the recording (in kHz): 
+
+           40
+
+
+Are the recordings voltage (0) or current (1) clamp? (default is 0): 0
+
+Input the cut-off frequency of the binomial smoothing filter (-3 dB, in kHz): 1000
+
+Are the peaks positive (1) or negative (-1) deflections? (default is auto): -1
+
+Input the number of peaks expected per trace: 1
+
+Is the input data baseline subtracted? (1=yes, 0=no, default is yes): 0
+
+Input the fractional valley threshold (default is 0.5): 
+
+Actual cut-off of the binomial filter (-3 dB, in kHz): 
+
+          7.1
+
+
+Number of peaks: 
+
+     1
+
+
+Peak Time (in ms): 
+
+            3
+
+
+Peak Current (in pA): 
+
+       -27686
+
+
+Baseline Time (in ms): 
+
+        2.175
+
+
+Baseline Current (in pA): 
+
+       3184.5
+
+
+Relative Peak Current (in pA): 
+
+       -30871
+
+
+Peak 20-80 percent rise time (in ms): 
+
+       0.3121
+
+
+Peak rising slope (in nA/ms): 
+
+       72.364
+
+
+Half-amplitude decay time (in ms): 
+
+        0.525
+
+
+Half-width (in ms): 
+
+      0.99198
+
+
+

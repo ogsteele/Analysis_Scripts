@@ -749,15 +749,16 @@ if N == Nref && N > 0
 
 
  % Save data
+ clnFilename = rmExtension(filename);
  diary('off');
   if exist('peaker.output','dir') == 0
     mkdir('peaker.output');
   end
  cd peaker.output
-  if exist(filename,'dir') == 0
-    mkdir(filename);
+  if exist(clnFilename,'dir') == 0
+    mkdir(clnFilename);
   end
- cd(filename);
+ cd(clnFilename);
   if exist('img','dir') == 0
    mkdir('img');
   end
@@ -765,11 +766,11 @@ if N == Nref && N > 0
    mkdir('txt');
   end
   if batch == 0
-   imgfilename=strcat('Tr', num2str(Tr), '_', filename);
-   txtfilename=strcat('Tr', num2str(Tr), '_', filename,'.txt');
+   imgfilename=strcat('Tr', num2str(Tr), '_', clnFilename);
+   txtfilename=strcat('Tr', num2str(Tr), '_', clnFilename,'.txt');
   elseif  batch == 1
-   imgfilename=strcat('Tr', num2str(i), '_', filename);
-   txtfilename=strcat('Tr', num2str(i), '_', filename,'.txt');
+   imgfilename=strcat('Tr', num2str(i), '_', clnFilename);
+   txtfilename=strcat('Tr', num2str(i), '_', clnFilename,'.txt');
   end
  cd txt
   if exist(txtfilename) ~= 0
@@ -809,7 +810,7 @@ elseif N ~= Nref || N == 0
  plot([min(tl_ref), max(tl_ref)],[0, 0],'-','color',[0.9,0.9,0.9]);
  hold on;
  plot(stl_ref(2:end-1),dydt_ref,'-','color',[0.75,0.75,0.75]);
- if ~isempty(regexp(filename,'event','once'))
+ if ~isempty(regexp(clnFilename,'event','once'))
   plot([0, 0],[dydtlimits(1), dydtlimits(2)],'-','color',[0.9,0.9,0.9]);
  end
  ylim([dydtlimits(1),dydtlimits(2)]); hold off;
@@ -860,16 +861,16 @@ elseif N ~= Nref || N == 0
   mkdir('peaker.output');
  end
 cd peaker.output
- if exist(filename,'dir') == 0
-  mkdir(filename);
+ if exist(clnFilename,'dir') == 0
+  mkdir(clnFilename);
  end
-cd(filename);
+cd(clnFilename);
  if batch == 0
-  imgfilename=strcat('Tr', num2str(Tr), '_', filename);
-  txtfilename=strcat('Tr', num2str(Tr), '_', filename,'.txt');
+  imgfilename=strcat('Tr', num2str(Tr), '_', clnFilename);
+  txtfilename=strcat('Tr', num2str(Tr), '_', clnFilename,'.txt');
  elseif  batch == 1
-  imgfilename=strcat('Tr', num2str(i), '_', filename);
-  txtfilename=strcat('Tr', num2str(i), '_', filename,'.txt');
+  imgfilename=strcat('Tr', num2str(i), '_', clnFilename);
+  txtfilename=strcat('Tr', num2str(i), '_', clnFilename,'.txt');
  end
  if exist('txt','dir') == 0
   mkdir('txt');
@@ -909,7 +910,7 @@ if length(Tr) > 1
 end
 end
 cd peaker.output
-cd(filename);
+cd(clnFilename);
  if (batch == 1) && isempty(Tr)
   mkdir('tables');
   cd tables
@@ -1119,3 +1120,12 @@ cd(filename);
  end
 cd ../..
 disp(sprintf('\nRemember to clear variables from the workspace before analysing other files\n'));
+
+
+function clnFilename = rmExtension(filename)
+      %%%% OGS filename change for saving
+        filename = split(filename,filesep);
+        filename = char(filename(end));
+        clnFilename = filename(1:end-4);
+      %%%% 
+end
