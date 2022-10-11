@@ -1,0 +1,107 @@
+
+(1) Conventional 
+(2) Peak-scaled
+Select which analysis to perform (default is 1): 
+
+Set the -3 dB cut-off of the binomial filter (in kHz, default is none): 
+
+Number of events discarded for missing data: 
+     0
+
+
+Enter the number of decay half-times to study peak fluctuations (default is 7): 
+
+Number of overlapping events discarded: 
+     0
+
+
+(1) Perform manual inspection of traces
+(2) Load previous manual inspection results
+(3) Skip this step
+Select an option (default is 1): 
+
+Use left and right cursor keys to navigate the traces
+Toggle a trace for deletion by pressing the t key.
+Press the RETURN key when the inspection is complete.
+Press escape to quite and skip manual inspection.
+
+Number of manually discarded traces: 
+     0
+
+
+Number of noisy traces discarded: 
+     0
+
+
+Input a threshold for the maximum event rise time (in ms, default is inf): 
+
+Number of slow rising events discarded: 
+     0
+
+
+Total number of successful traces: 
+    23
+
+
+Correlation statistics for peak amplitudes: 
+Weak correlation
+Spearman Rank Correlation Coefficient (r): 
+      0.25593
+
+Statistically not significant
+Two-tailed P-value from Studentized r coefficient: 
+      0.23852
+
+
+Correlation statistics for peak rise times: 
+Very Weak correlation
+Spearman Rank Correlation Coefficient (r): 
+     0.056324
+
+Statistically not significant
+Two-tailed P-value from Studentized r coefficient: 
+      0.79852
+
+
+Correlation statistics for peak half-decay times: 
+Modest correlation
+Spearman Rank Correlation Coefficient (r): 
+     -0.63395
+
+Statistically very significant
+Two-tailed P-value from Studentized r coefficient: 
+    0.0011615
+
+
+Half-decay time (+/- SD, in ms): 
+ 0.52 +/- 0.02
+
+(1) Independent traces
+(2) Overlapping difference traces
+Select which method to calculate the ensemble variance (default is 1): 
+
+Enter the number of bins: 14
+
+Variance of the pre-event baseline noise (in pA^2): 
+ 0
+
+Enter up to what fraction of the relationship to fit (default is 1): 
+
+f(x)= 313883.4397 - 15.5786*x + 0.00048183*x.^2
+
+Coefficient of determination (R-sq) of the fit: 
+ 0.155
+
+Fitted baseline variance (+/- SD, in pA^2): 
+ 3.14e+05 +/- 6.4e+04
+
+Weighted-mean single channel current (+/- SD, in pA): 
+ 15.6 +/- 10
+
+Total number of channels (N):
+ 2.08e+03 +/- 40
+
+Maximum peak open probability (Po): 
+ -0.796 +/- 0.15
+
+

@@ -1,6 +1,6 @@
 
 Data matrix filename (excluding extension): 
-C:\Users\bsms9vyk\Documents\Github\Analysis_Scripts\NSFA\exampleData\OGS_NSFA_Raw_000\OGS_NSFA_Raw_000_ROI.phy
+D:\Oli Steele\Documents\GitHub\Analysis Scripts\NSFA\exampleData\OGS_NSFA_Raw_000\OGS_NSFA_Raw_000_ROI.phy
 
 Trace number: 
 

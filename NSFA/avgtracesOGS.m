@@ -55,8 +55,19 @@ if exist('diary','file') == 2
 end
 
 if exist('filename','var')
- if exist(strcat('peaker.output/',filename,'/tables'))
-  cd(strcat('peaker.output/',filename,'/tables'))
+ if exist(strcat('peaker.output/',clnFilename,'/tables'))
+  cd(strcat('peaker.output/',clnFilename,'/tables'))
+  if exist('diary','file') == 2
+   diary('off');
+   delete('diary');
+  end
+ end
+else
+    [file,path] = uigetfile('*.phy');
+    filename = fullfile(path,file);
+    clnFilename = rmExtension(filename);
+    if exist(strcat('peaker.output/',clnFilename,'/tables'))
+  cd(strcat('peaker.output/',clnFilename,'/tables'))
   if exist('diary','file') == 2
    diary('off');
    delete('diary');
@@ -192,15 +203,15 @@ if exist('scale_factor')
 %    y(:,i)=interp1q(data(:,1),data(:,i+1),t);
 %    warning(state)
 %   end
-  t=data(:,1);
-  y=data; y(:,1)=[];
+  t=data.array(:,1);
+  y=data.array; y(:,1)=[];
  elseif scale_factor == 1
-  t=data(:,1);
-  y=data; y(:,1)=[];
+  t=data.array(:,1);
+  y=data.array; y(:,1)=[];
  end
 else
- t=data(:,1);
- y=data; y(:,1)=[];
+ t=data.array(:,1);
+ y=data.array; y(:,1)=[];
 end
 if exist('_offset','file')
   offset=load('-ascii','_offset');
@@ -883,10 +894,11 @@ if exist('avgtraces.output','dir') == 0
  mkdir('avgtraces.output');
 end
 cd avgtraces.output
-if exist(filename,'dir') == 0
- mkdir(filename);
+clnFilename = rmExtension(filename);
+if exist(clnFilename,'dir') == 0
+ mkdir(clnFilename);
 end
-cd(filename);
+cd(clnFilename);
 save('mean_trace.txt','mean_trace','-ascii','-tabs');
 %gzip('mean_trace.txt');
 %delete('mean_trace.txt');
@@ -957,9 +969,9 @@ print(1,'output.eps','-depsc');
  state = warning('query');
  warning off
  if clamp == 0
-  ephysIO('output.mat',aligned_data,'s','A');
+  ephysIO('output.phy',aligned_data,'s','A');
  elseif clamp == 1
-  ephysIO('output.mat',aligned_data,'s','V');
+  ephysIO('output.phy',aligned_data,'s','V');
  end
  warning(state)
 
@@ -977,14 +989,14 @@ print(1,'output.eps','-depsc');
  state = warning('query');
  warning off
  if clamp == 0
-  ephysIO('scaled_output.mat',scaled_data,'s','A');
+  ephysIO('scaled_output.phy',scaled_data,'s','A');
  elseif clamp == 1
-  ephysIO('scaled_output.mat',scaled_data,'s','V');
+  ephysIO('scaled_output.phy',scaled_data,'s','V');
  end
  warning(state)
 %end
 cd ../..
-cd(strcat('peaker.output/',filename))
+cd(strcat('peaker.output/',clnFilename))
 if exist('img')
  tar('img.tar','img');
  gzip('img.tar');
@@ -992,9 +1004,17 @@ if exist('img')
  rmdir('img','s');
 end
 cd ../..
-if ~isempty(regexp(filename,'_events','once'))
- meet(filename,clamp);
+if ~isempty(regexp(clnFilename,'_events','once'))
+ meet(clnFilename,clamp);
 end
 end
 
 disp(sprintf('\nRemember to clear variables from the workspace before analysing other files\n'));
+
+function clnFilename = rmExtension(filename)
+      %%%% OGS filename change for saving
+        filename = split(filename,filesep);
+        filename = char(filename(end));
+        clnFilename = filename(1:end-4);
+      %%%% 
+end

@@ -1,0 +1,92 @@
+
+Select upto which trace number you wish to analyse (default is all): 
+
+Would you like to plot the average trace (1) or not (0, default is yes)?: 
+
+Would you like to perform alignment (1) or not (0, default is yes)?: 
+
+Would you like to fit an exponential to the decays (1=yes, 0=no, default is no)?: 1
+
+Enter the fraction of the peak to fit exponential from (default is 1): 1
+
+Enter the time period after peak to fit the exponential to (in ms): 10
+ 
+Exiting: Maximum number of function evaluations has been exceeded
+         - increase MaxFunEvals option.
+         Current function value: 986909369.541395 
+
+ 
+Exiting: Maximum number of function evaluations has been exceeded
+         - increase MaxFunEvals option.
+         Current function value: 1182240475.954458 
+
+
+Enter optional cut-off for 20-80 percent event rise-time (in ms, default is auto): 
+
+RTmax =
+
+      0.32145
+
+
+Enter optional cut-off for event decay tau (in ms, default is auto): 
+
+TCmax =
+
+        1.078
+
+
+Traces that could not be fit and/or were excluded by event filter: 
+
+     0
+
+
+Number of successful traces: 
+
+    23
+
+
+Median relative peak amplitude (in pA): 
+
+       -30029
+
+
+Coefficient of variation of the relative event amplitude: 
+
+     0.030647
+
+
+Median peak integral (in fC): 
+
+       -46047
+
+
+Median 20-80 percent risetime (in ms): 
+
+      0.31652
+
+
+Median initial rising slope (in nA/ms): 
+
+       68.499
+
+
+Median half-amplitude decay time (in ms): 
+
+        0.525
+
+
+Median half-width (in ms): 
+
+       0.9841
+
+
+Median decay time constant (in ms): 
+
+      0.91129
+
+
+
+1) Risetime 
+2) Peak 
+3) Steepest rise
+Select which reference point you want to align the events to (default is 1): 2

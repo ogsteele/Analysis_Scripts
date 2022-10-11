@@ -1,17 +1,9 @@
 
-Data matrix filename (including extension): C:\Users\bsms9vyk\Documents\Github\Analysis_Scripts\NSFA\exampleData\OGS_NSFA_Raw_000\OGS_NSFA_Raw_000_ROI.phy
+Data matrix filename (including extension): D:\Oli Steele\Documents\GitHub\Analysis Scripts\NSFA\exampleData\OGS_NSFA_Raw_000\OGS_NSFA_Raw_000_ROI.phy
 
 Number of traces in this file: 
     23
 
-
-Select the trace number for this analysis (default is all): all
-{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('all')" style="font-weight:bold">all</a>
-Not enough input arguments.
-
-Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('peaker', 'C:\Users\bsms9vyk\Documents\Github\Analysis_Scripts\NSFA\peaker.m', 139)" style="font-weight:bold">peaker</a> (<a href="matlab: opentoline('C:\Users\bsms9vyk\Documents\Github\Analysis_Scripts\NSFA\peaker.m',139,0)">line 139</a>)
-  Tr=input(sprintf('\nSelect the trace number for this analysis (default is all): '));
-} 
 
 Select the trace number for this analysis (default is all): 
 
@@ -35,7 +27,7 @@ Input the number of peaks expected per trace: 1
 
 Is the input data baseline subtracted? (1=yes, 0=no, default is yes): 0
 
-Input the fractional valley threshold (default is 0.5): 
+Input the fractional valley threshold (default is 0.5): 0.5
 
 Actual cut-off of the binomial filter (-3 dB, in kHz): 
 
