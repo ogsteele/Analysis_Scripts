@@ -3,7 +3,7 @@
 (2) Peak-scaled
 Select which analysis to perform (default is 1): 
 
-Set the -3 dB cut-off of the binomial filter (in kHz, default is none): 
+Set the -3 dB cut-off of the binomial filter (in kHz, default is none): 1000
 
 Number of events discarded for missing data: 
      0
@@ -18,16 +18,7 @@ Number of overlapping events discarded:
 (1) Perform manual inspection of traces
 (2) Load previous manual inspection results
 (3) Skip this step
-Select an option (default is 1): 
-
-Use left and right cursor keys to navigate the traces
-Toggle a trace for deletion by pressing the t key.
-Press the RETURN key when the inspection is complete.
-Press escape to quite and skip manual inspection.
-
-Number of manually discarded traces: 
-     0
-
+Select an option (default is 1): 3
 
 Number of noisy traces discarded: 
      0
@@ -40,37 +31,37 @@ Number of slow rising events discarded:
 
 
 Total number of successful traces: 
-    23
+    22
 
 
 Correlation statistics for peak amplitudes: 
-Weak correlation
+Very Weak correlation
 Spearman Rank Correlation Coefficient (r): 
-      0.25593
+      0.14963
 
 Statistically not significant
 Two-tailed P-value from Studentized r coefficient: 
-      0.23852
+      0.50629
 
 
 Correlation statistics for peak rise times: 
 Very Weak correlation
 Spearman Rank Correlation Coefficient (r): 
-     0.056324
+     0.071711
 
 Statistically not significant
 Two-tailed P-value from Studentized r coefficient: 
-      0.79852
+      0.75115
 
 
 Correlation statistics for peak half-decay times: 
 Modest correlation
 Spearman Rank Correlation Coefficient (r): 
-     -0.63395
+      -0.6013
 
 Statistically very significant
 Two-tailed P-value from Studentized r coefficient: 
-    0.0011615
+    0.0030767
 
 
 Half-decay time (+/- SD, in ms): 
@@ -80,28 +71,28 @@ Half-decay time (+/- SD, in ms):
 (2) Overlapping difference traces
 Select which method to calculate the ensemble variance (default is 1): 
 
-Enter the number of bins: 14
+Enter the number of bins: 15
 
 Variance of the pre-event baseline noise (in pA^2): 
  0
 
 Enter up to what fraction of the relationship to fit (default is 1): 
 
-f(x)= 313883.4397 - 15.5786*x + 0.00048183*x.^2
+f(x)= 166558.317 + 12.5878*x - 0.00020767*x.^2
 
 Coefficient of determination (R-sq) of the fit: 
- 0.155
+ 0.761
 
 Fitted baseline variance (+/- SD, in pA^2): 
- 3.14e+05 +/- 6.4e+04
+ 1.67e+05 +/- 5.8e+04
 
 Weighted-mean single channel current (+/- SD, in pA): 
- 15.6 +/- 10
+ -12.6 +/- 8.5
 
 Total number of channels (N):
- 2.08e+03 +/- 40
+ 4.82e+03 +/- 80
 
 Maximum peak open probability (Po): 
- -0.796 +/- 0.15
+ 0.426 +/- 0.85
 
 

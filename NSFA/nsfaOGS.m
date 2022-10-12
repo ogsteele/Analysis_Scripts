@@ -110,8 +110,8 @@ try
  if exist('amplitude.txt','file');
   R=load('-ascii','amplitude.txt');
  end
- if exist('relative.txt','file');
-  R=load('-ascii','relative.txt');
+ if exist('absolute.txt','file');
+  R=load('-ascii','absolute.txt');
  end
  RT=load('-ascii','risetime.txt');
  DT=load('-ascii','decay_time.txt');
