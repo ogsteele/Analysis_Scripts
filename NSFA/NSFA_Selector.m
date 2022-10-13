@@ -94,7 +94,7 @@ hold on; pc = plot(ind(1)*S1.xdiff,val(1),'*r','DisplayName','Peak Amplitude');
 % convert peakLogical to a logical
 peakLogical = logical(peakLogical)';
 
-% extract only the waves that pass the logic gate above
+% extract only the waves that pass the double logic gates above
 selectWaves = Waves(:,peakLogical);
 
 % pull xlim and ylim from gcf
@@ -118,7 +118,51 @@ end
 L1 = find(peakLogical, 1, 'first');
 plot(ind(L1)*S1.xdiff,val(L1),'*r','linewidth',2,'DisplayName','Peak Amplitude')
 
-% save the new file (complete)
+% create variables
+wavenum = 1:size(val,1);
+rawPeaks = val*10e9;
+selectPeaks = val(peakLogical)*10e9;
+selectWavesind = find(peakLogical);
+
+% create the linear fit
+x = selectWavesind;
+y = selectPeaks;
+p = polyfit(x,y,1);
+f = polyval(p,x);
+
+% plot variables now
+figure; 
+plot(wavenum,rawPeaks,'o','color',[0.5 0.5 0.5],'DisplayName','deleted peaks')
+hold on; plot(selectWavesind,selectPeaks,'o','color','red','LineWidth',2,'DisplayName','selected peaks')
+hold on; plot(selectWavesind,movmean(selectPeaks,4),'DisplayName','movmean (n = 4)')
+hold on; plot(x,f,'-','DisplayName','Linear Fit')
+
+% format the plot
+box off; set(gcf,'color','white'); set(gca,'linewidth',2);
+xlabel('Wave number'); ylabel('Current (nA)'); title('Amplitude as a function of time');
+legend()
+
+% zoom in if needeed
+disp('zoom into selected waves if needed, before hitting Enter')
+pause % pause until key press
+
+% select the total spike region
+disp('Select the region w/o systematic change')
+[selectRegion,~] = ginput(2);
+xline(selectRegion(1),'linestyle','--','color','blue','linewidth',2,'HandleVisibility','off')
+xline(selectRegion(2),'linestyle','--','color','blue','linewidth',2,'DisplayName','Selected Region')
+legend()
+
+% select the waves you now want to keep
+waveLogical = wavenum((wavenum > selectRegion(1)) ...
+                        & (wavenum < selectRegion(2))); % above below lines
+waveLogical = waveLogical(...
+                    peakLogical(waveLogical(1):waveLogical(end))); % is peak logical?
+
+% extract only the waves that pass the double logic gates above
+selectWaves = Waves(:,waveLogical);
+
+% save the new file (with full t)
 cd(path); cd ..; % navigate to one dir above the file recs
 splitfile = split(clampfile,filesep);
 savefile = [char(splitfile(end-2)) '.phy'];
@@ -137,7 +181,7 @@ ephysIO(savefile,[t w],S1.xunit,S1.yunit)
 saveFigName = char(splitfile(end-2));
 savefig(saveFigName)
 
-% plot the ROI
+% plot the ROI trace
 figure; plot(t,w,'color','black')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2);
 xlabel('Time (s)'); ylabel('Current (A)'); title('Selected Waves');
