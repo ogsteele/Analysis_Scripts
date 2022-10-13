@@ -24,6 +24,28 @@ ylabel('Current (A)')
 disp('Close spare figure if needed and zoom into trace, before hitting Enter')
 pause % pause until key press
 
+% select the baseline region for baseline subtraction
+disp('Select the baseline region for baseline subtraction')
+[base_s,~] = ginput(2);
+xline(base_s(1),'linestyle','--','color','green','linewidth',2,'HandleVisibility','off')
+xline(base_s(2),'linestyle','--','color','green','linewidth',2,'DisplayName','Baseline Region')
+legend()
+
+% calculate baseline values
+base_x = round(base_s/S1.xdiff);
+baseVal = mean(Waves(base_x(1):base_x(2),:));
+
+% perform baseline subtraction here 
+% (note, it won't appear in current fig but does affect the math and the
+% final trace produced and saved)
+for i = 1:size(Waves,2)
+    Waves(:,i) = Waves(:,i) - baseVal(i);
+end
+
+% close spare fig and zoom into the area of interest and hit enter
+disp('Close spare figure if needed and zoom into trace, before hitting Enter')
+pause % pause until key press
+
 % select the total spike region
 disp('Select the total spike region')
 [spike_x,~] = ginput(2);
@@ -133,7 +155,7 @@ f = polyval(p,x);
 % plot variables now
 figure; 
 plot(wavenum,rawPeaks,'o','color',[0.5 0.5 0.5],'DisplayName','deleted peaks')
-hold on; plot(selectWavesind,selectPeaks,'o','color','red','LineWidth',2,'DisplayName','selected peaks')
+hold on; h(5) = plot(selectWavesind,selectPeaks,'o','color','red','LineWidth',2,'DisplayName','selected peaks');
 hold on; plot(selectWavesind,movmean(selectPeaks,4),'DisplayName','movmean (n = 4)')
 hold on; plot(x,f,'-','DisplayName','Linear Fit')
 
@@ -158,6 +180,11 @@ waveLogical = wavenum((wavenum > selectRegion(1)) ...
                         & (wavenum < selectRegion(2))); % above below lines
 waveLogical = waveLogical(...
                     peakLogical(waveLogical(1):waveLogical(end))); % is peak logical?
+selectPeaks = val(waveLogical)*10e9;
+
+% update the plot
+delete(h(5))
+hold on; plot(waveLogical,selectPeaks,'o','color','red','LineWidth',2,'DisplayName','selected peaks');
 
 % extract only the waves that pass the double logic gates above
 selectWaves = Waves(:,waveLogical);
