@@ -35,13 +35,6 @@ legend()
 base_x = round(base_s/S1.xdiff);
 baseVal = mean(Waves(base_x(1):base_x(2),:));
 
-% perform baseline subtraction here 
-% (note, it won't appear in current fig but does affect the math and the
-% final trace produced and saved)
-for i = 1:size(Waves,2)
-    Waves(:,i) = Waves(:,i) - baseVal(i);
-end
-
 % close spare fig and zoom into the area of interest and hit enter
 disp('Close spare figure if needed and zoom into trace, before hitting Enter')
 pause % pause until key press
@@ -130,6 +123,13 @@ plot(Time,selectWaves,'color','black','linewidth',1.5,'HandleVisibility','off')
 plot(nan, nan, 'color', 'black', 'linestyle', '--','DisplayName','Deleted Traces');
 plot(nan, nan, 'color', 'black', 'linewidth', 2, 'DisplayName','Selected Traces');
 
+% perform baseline subtraction here 
+% (note, it won't appear in current fig but does affect the math and the
+% final trace produced and saved)
+for i = 1:size(Waves,2)
+    Waves(:,i) = Waves(:,i) - baseVal(i);
+end
+
 % replot with the circles on the top
 delete(pc)
 for i = 1:size(peakLogical,2)
@@ -213,3 +213,5 @@ figure; plot(t,w,'color','black')
 box off; set(gcf,'color','white'); set(gca,'linewidth',2);
 xlabel('Time (s)'); ylabel('Current (A)'); title('Selected Waves');
 
+% print out savefile so it's the last thing in the command window
+disp(savefile)

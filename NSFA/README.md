@@ -36,7 +36,7 @@ Last update: *13.10.2022*
         | Relative peak fraction | 0.95           |
         | Reference align        | steepest slope |
 
-    3.  Run `nsfaOGS.m` immediately after the above step. Settings to note include;
+    3.  Run `nsfaOGS.m` immediately after the above step, making note of the final three values in the summary.txt file. Settings to note include;
 
         | UI Input Text         | Value                 |
         |-----------------------|-----------------------|

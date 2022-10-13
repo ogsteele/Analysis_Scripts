@@ -800,6 +800,7 @@ if N == Nref && N > 0
  cd ../../..
 
 elseif N ~= Nref || N == 0
+ clnFilename = rmExtension(filename);   
  % Plot graphs
  figure(2);
  clf(2);
