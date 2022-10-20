@@ -199,7 +199,7 @@ ephysIO(savefile,new_array,S1.xunit,S1.yunit)
 % save another file that only has the region of interest
 savefile = [char(splitfile(end-2)) '_ROI.phy'];
 start_t = round(0.178/S1.xdiff);
-end_t = round(0.195/S1.xdiff); 
+end_t = round(0.25/S1.xdiff); 
 w = selectWaves(start_t:end_t,:);
 t = Time(1:size(w,1));
 ephysIO(savefile,[t w],S1.xunit,S1.yunit)

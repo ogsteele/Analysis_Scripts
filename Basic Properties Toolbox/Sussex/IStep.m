@@ -3,7 +3,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 % Current step protocol analysis, featuring user defined input at various
 % points
 %
-% IStep v1.2.1 (last updated: 04/10/2022)
+% IStep v1.2.2 (last updated: 20/10/2022)
 % Author: OGSteele
 %
 % example use;
@@ -51,6 +51,9 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %       - organotypic DIV21 CA1 pyramidal neurons @ RT (25 ms)
 %       - cultured iPSC derived neurons @ RT (50 ms)
 % Advised to use devThresh.m script to determine optimal values
+%
+% Dependancies
+%   - Signal Processing Toolbox (mathworks)
 
 %% Update Log
 
@@ -78,11 +81,19 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   - adjusted minPeakHeight in AP Analysis to prevent double spikes
 %   - included 7 pole medianf to decrease impact of fast noise in Ih Sag
 
+% 20.10.22 [OGS]
+%   - updated dependancies to include readMeta.m and the signal processign
+%   toolbox
+%   - all figures closed on running
+
 %% To do list (when Oli finds the time ...) 
 
 % every action potential detail
 
 %% Code
+
+% close figures
+close all
 
 % load file of interest
 [file,path] = uigetfile('*.ma'); % select file of interest
@@ -3928,3 +3939,451 @@ end
 end
 
 %--------------------------------------------------------------------------
+
+% readMeta.m from Luka Campagnola
+function f = readMeta(file)
+info = hdf5info(file);
+f = readMetaRecursive(info.GroupHierarchy.Groups(1));
+end
+
+
+function f = readMetaRecursive(root)
+typ = 0;
+for i = 1:length(root.Attributes)
+    if strcmp(root.Attributes(i).Shortname, '_metaType_')
+        typ = root.Attributes(i).Value.Data;
+        break
+    end
+end
+if typ == 0
+    printf('group has no _metaType_')
+    typ = 'dict';
+end
+
+list = 0;
+if strcmp(typ, 'list') || strcmp(typ, 'tuple')
+    data = {};
+    list = 1;
+elseif strcmp(typ, 'dict')
+    data = struct();
+else
+    printf('Unrecognized meta type %s', typ);
+    data = struct();
+end
+
+for i = 1:length(root.Attributes)
+    name = root.Attributes(i).Shortname;
+    if strcmp(name, '_metaType_')
+        continue
+    end
+    val = root.Attributes(i).Value;
+    if isa(val, 'hdf5.h5string')
+        val = val.Data;
+    end
+    if list
+        ind = str2num(name)+1;
+        data{ind} = val;
+    else
+        data.(name) = val;
+    end
+end
+
+for i = 1:length(root.Datasets)
+    fullName = root.Datasets(i).Name;
+    name = stripName(fullName);
+    file = root.Datasets(i).Filename;
+    data2 = hdf5read(file, fullName);
+    if list
+        ind = str2num(name)+1;
+        data{ind} = data2;
+    else
+        data.(name) = data2;
+    end
+end
+
+for i = 1:length(root.Groups)
+    name = stripName(root.Groups(i).Name);
+    data2 = readMetaRecursive(root.Groups(i));
+    if list
+        ind = str2num(name)+1;
+        data{ind} = data2;
+    else
+        data.(name) = data2;
+    end
+end
+f = data;
+return;
+end
+
+
+function f = stripName(str)
+inds = strfind(str, '/');
+if isempty(inds)
+    f = str;
+else
+    f = str(inds(length(inds))+1:length(str));
+end
+end
+
+%--------------------------------------------------------------------------
+
+%     Function File: [y, k] = bounce (y, n)
+%
+%     Extend each end of the y-vector by n number of points for
+%     'bounce' (or mirror) end-effect correction. The output
+%     includes the extended y-vector and the number of bounces (k).
+%
+%     bounce v1.0 (last updated: 16/09/2011)
+%     Author: Andrew Charles Penn
+%     https://www.researchgate.net/profile/Andrew_Penn/
+
+
+function [y] = bounce (y, n)
+
+if nargin ~= 2
+ error('Invalid number of input arguments');
+end
+
+if all(size(y) == 1) || ~any(size(y) == 1)
+ error('y must be a vector');
+end
+
+if isinf(n) || ~all(size(n) == 1) || n<=0 || n~=round(n)
+ error('n must be a nonnegative integer');
+end
+
+
+% Set input vector as column vector if applicable
+y=y(:); y_ref=y;
+
+% Extend each end by n number of points for 'bounce' end-effect correction
+N=numel(y);
+k=0;
+while (n > N)
+ if (k == 0) || (k/2 == round(k/2))
+  y=cat(1,flipud(y_ref),y,flipud(y_ref));
+ else
+  y=cat(1,y_ref,y,y_ref);
+ end
+ k=k+1;
+ n=n-N;
+end
+if (k == 0) || (k/2 == round(k/2))
+ y=cat(1,flipud(y_ref(1:n)),y,flipud(y_ref(end-n+1:end)));
+else
+ y=cat(1,y_ref(end-n+1:end),y,flipud(y_ref(1:n)));
+end
+
+end
+%--------------------------------------------------------------------------
+%     Function File: filter1
+%
+%         Usage: YF = filter1 (Y, t, HPF, LPF, method)
+%
+%            OR: filter1 (filename, ending, HPF, LPF, method, '-file')
+%
+%     This function combines high- and/or low-pass 1-D filtering at the
+%     set -3 dB cut-off frequencies, which are defined in the parameters
+%     HPF and LPF (units Hertz). To switch off the high-pass filter, enter
+%     an HPF value of 0. To switch off the low-pass filter, enter an LPF
+%     value of Inf. This function avoids end effects by using a bounce
+%     algorithm.
+%
+%     Low pass filtering is achieved using a digital Gaussian filter at the
+%     specified cut-off frequency LPF. 
+
+%     High pass filtering is achieved using a digital binomial filter
+%     (default method='binomial'). If the method is specified as 'median', 
+%     then a median filtering method is used at the specified HPF cut-off
+%     frequency and the resulting trace is subtracted from the input.
+%     The filter rank is estimated from the desired cut-off value for the
+%     analagous linear filter (boxcar). The median filter does not cause
+%     the edge effects that linear filters are prone to, but is slower
+%     Note that in the case of the median filter, the HPF value reported
+%     is an estimate of the -3 dB cut-off for the initial low-pass 
+%     filtering prior to subtraction and not the -3 dB cutoff of the 
+%     resulting high-pass filter.
+%
+%     In the first example of the function usage, filtering is by default
+%     applied to each data column in Y as a function of time (t) defined
+%     by the first and second input arguments respectively. The output
+%     arguments are the filtered data values (YF).
+%
+%     The second example of the function usage is defined by setting a
+%     sixth input argument to '-file'. In this mode, the function instead
+%     loads the data from the text file named in the first input argument
+%     and saves the processed data with the filename appended with the
+%     ending given in the second input argument. If the ending option is
+%     left empty ('[]'), the function will overwrite the original file.
+%     The used cut-off values are saved in a separate file with the new
+%     filename appended with '_Fc'. The data is saved in the ephysIO hdf5-
+%     based MATLAB format with the .mat filename extension.
+%
+%     When used to band-pass filter, this function performs operations in
+%     the order: 1) High-pass, then 2) Low-pass.
+%
+%     This function requires the following functions and their dependencies:
+%     'ephysIO', 'hpfilter', 'lpfilter', 'binomialf' and 'medianf'.
+%
+%     Bibliography:
+%     Marchand & Marmet (1983) Rev Sci Instrum 54(8): 1034-1041
+%     Moore & Jorgenson (1993) Anal Chem 65: 188-191
+%
+%     filter1 v1.3 (last updated: 21/02/2017)
+%     Author: Andrew Charles Penn
+%     https://www.researchgate.net/profile/Andrew_Penn/
+
+
+function YF = filter1 (argin1, argin2, HPF, LPF, method, option)
+
+  if nargin<4
+    error('Invalid number of input arguments');
+  end
+
+  if isinf(HPF) || ~all(size(HPF) == 1) || HPF<0
+    error('If non-zero, the HPF cut-off must be a nonnegative, finite value in unit Hz');
+  end
+
+  if ~all(size(LPF) == 1) || LPF<=0
+    error('If finite, the LPF cut-off must be a nonnegative, non-zero value in unit Hz');
+  end
+
+  if nargin>4
+    if isempty(method)
+      method='binomial';
+    end
+  else
+    method='binomial';
+  end
+
+  if nargin>5
+    if ~strcmp(option,'-file')
+      error('If option is specified, it must be set to '-file'');
+    end
+  else
+    option=[];
+  end
+
+  % Load data
+  if strcmp(option,'-file')
+    cwd = pwd;
+    if ~isempty(regexpi(argin1(end-2:end),'.gz'))
+      [pathstr,filename,ext] = fileparts(argin1(end-2:end));
+    elseif ~isempty(regexpi(argin1(end-3:end),'.zip'))
+      [pathstr,filename,ext] = fileparts(argin1(end-3:end));
+    else
+      [pathstr,filename,ext] = fileparts(argin1);
+    end
+    if ~isempty(pathstr)
+      chdir(pathstr);
+    end
+    [data,xdiff,xunit,yunit,names,notes] = ephysIO (strcat(filename,ext));
+    t=data(:,1);
+    Y=data; Y(:,1)=[];
+  else
+    Y=argin1;
+    t=argin2;
+    if any(diff(diff(t)) > 1.192093e-07)
+      % Variable sampling interval
+      xdiff = 0;
+    else
+      xdiff = t(2)-t(1);
+    end
+  end
+  l=length(t);
+
+  % Perform linear interpolation on non-evenly spaced datasets
+  if xdiff == 0
+    disp(sprintf('Input must consist of data sampled at evenly spaced time points.\nData will undergo linear interpolation.'));
+    sample_rate=(l-1)/(max(t)-min(t));
+    tl=linspace(min(t),max(t),l);
+    tl=tl(:);
+    for i=1:size(Y,2)
+      state = warning('query');
+      warning off %#ok<WNOFF>
+      Yl(:,i)=interp1q(t,Y(:,i),tl);
+      warning(state)
+    end
+  elseif xdiff > 0
+    sample_rate=(l-1)/(max(t)-min(t));
+    tl=t(:);
+    Yl=Y;
+  end
+
+% Filter data traces
+if strcmp(option,'-file')
+ figure(2)
+ clf
+end
+for i=1:size(Yl,2)
+  yf = Yl(:,i);
+  if ~isinf(LPF)
+    yf = gaussianf (yf, tl, LPF,'on');
+  end
+  yref = yf;
+  if HPF > 0
+    if strcmp(method,'median')
+     % Analogy to a linear, boxcar filter:
+     % -3 dB cut-off: Fc  ~ 0.443 / p * sample_rate,
+     % where the number of points in the sliding window:
+     % p = 2 * r + 1 and Fc is HPF and r is the filter rank
+     p = ((0.443*sample_rate)/HPF);
+     r=round((p-1)/2);
+     HPF = 0.443 / (2*r+1) * sample_rate;
+     arch = computer('arch');
+     try
+       if strcmpi(arch,'maci64')
+         % Code to run on Mac 64-bit platform
+         [ybase, tbase] = medianf_mex_maci64 (yref, tl, r);  %#ok<*ASGLU>
+       elseif strcmpi(arch,'glnxa64')
+         % Code to run on Linux 64-bit platform
+         [ybase, tbase] = medianf_mex_glnxa64 (yref, tl, r);
+       elseif strcmpi(arch,'win64')
+         % Code to run on Windows 64-bit platform
+         [ybase, tbase] = medianf_mex_win64 (yref, tl, r);
+       end
+     catch
+       warning(sprintf(['A suitable MEX file for medianf is not available or failed to execute.\n',...
+                        'Falling back to Matlab file']));
+       [ybase, tbase] = medianf (yref, tl, r);
+     end
+     yf=yref-ybase;
+     if strcmp(option,'-file')
+      y_autoscale=0.05*(max(yref)-min(yref)); y_maxlim=max(yref)+y_autoscale; y_minlim=min(yref)-y_autoscale; % Encoded y-axis autoscaling
+      figure(2); hold on; plot(tl,yref,'-','color',[0.75,0.75,0.75]); plot(tl,ybase,'k'); hold off; xlim([min(tl),max(tl)]); ylim([y_minlim y_maxlim]); box('off');
+     end
+    elseif strcmp(method, 'binomial')
+     yf = hpfilter (yref, tl, HPF);
+     if strcmp(option,'-file')
+      y_autoscale=0.05*(max(yref)-min(yref)); y_maxlim=max(yref)+y_autoscale; y_minlim=min(yref)-y_autoscale; % Encoded y-axis autoscaling
+      figure(2); hold on; plot(tl,yref,'-','color',[0.75,0.75,0.75]); plot(tl,yref-yf,'k-'); hold off; xlim([min(tl),max(tl)]); ylim([y_minlim y_maxlim]); box('off');
+     end
+   end
+  elseif HPF == 0
+   figure(2)
+   close(2)
+  end
+ YF(:,i)=yf;
+end
+
+% Output for filter1 function in '-file' mode
+if strcmp(option,'-file')
+ diary('on');
+ cutoffs=strcat(argin1,argin2,'_Fc.txt');
+ if exist(cutoffs,'file') ~= 0
+  delete(cutoffs);
+ end
+ method %#ok<NOPRT>
+ format short g
+ if strcmp(method,'binomial')
+  HPF %#ok<NOPRT>
+ elseif strcmp(method,'median')
+  HPF %#ok<NOPRT>
+  r %#ok<NOPRT>
+ end
+ LPF %#ok<NOPRT>
+ diary('off');
+ figure(1);
+ y_autoscale=0.05*(max(max(YF))-min(min(YF))); y_maxlim=max(max(YF))+y_autoscale; y_minlim=min(min(YF))-y_autoscale; % Encoded y-axis autoscaling
+ plot(tl,YF,'k-'); xlim([min(tl),max(tl)]); ylim([y_minlim y_maxlim]); box('off');
+ ylabel(strcat('y-axis (',yunit,')'));
+ xlabel(strcat('x-axis (',xunit,')'));
+ output_data=cat(2,tl,YF); %#ok<NASGU>
+ newfilename=strcat(filename,argin2,'.mat');
+ ephysIO(newfilename,output_data,xunit,yunit,names,notes);
+ if exist('filter1.output','dir') == 0
+  mkdir('filter1.output');
+ end
+ cd filter1.output
+ newfilename=strtok(newfilename,'.');
+ if exist(newfilename,'dir') == 0
+  mkdir(newfilename);
+ end
+ cd(newfilename);
+ print(1,'output.png','-dpng');
+ print(1,'output.eps','-depsc');
+ if HPF > 0
+  print(2,'baseline.png','-dpng');
+  print(2,'baseline.eps','-depsc');
+ end
+ movefile('../../diary',cutoffs);
+ cd ../..
+ clear YF tl
+end
+end
+
+%-------
+
+%     Function File: [yf, tf, F] = gaussianf (y, t, Fc, correction)
+%
+%     Application of a Gaussian smoothing filter to the y-vector.
+%     The cutoff of the low pass filter is at frequency Fc (in Hz)
+%     Requires the Matlab Signal Processing toolbox.
+%
+%     Output vectors of the smoothed y-values and of the corresponding
+%     time (t) values are returned.
+%
+%     gaussianf v1.0 (last updated: 16/09/2011)
+%     Author: Andrew Charles Penn
+%     https://www.researchgate.net/profile/Andrew_Penn/
+
+
+function [yf, tf, F] = gaussianf (y, t, Fc, correction)
+
+if nargin ~= 4
+ error('Invalid number of input arguments');
+end
+
+if all(size(t) == 1) || ~any(size(t) == 1) || any(size(t)~=size(y))
+ error('t and y must be vectors of the same size');
+end
+
+if isinf(Fc) || isnan(Fc) || ~all(size(Fc) == 1) || Fc<=0
+ error('Fc must be a finite nonnegative number');
+end
+
+% Set all input vectors as column vectors
+t=t(:); y=y(:);
+
+% Calculate sampling frequency
+N = numel(t);
+Fs = (N-1)/(max(t)-min(t));
+
+% Calculate the standard deviation of the Gaussian envelope in points
+sigma = Fs*0.132505/Fc;
+
+% Calculate Filter coefficients
+if sigma < 0.62
+  n = 1;
+  b = sigma^2/2;
+  F(1) = b;
+  F(2) = 1-2*b;
+  F(3) = b;
+else
+  p = 2*round(4*sigma)+1;
+  n = (p-1)/2;
+  b = -1/(2*sigma^2);
+  i = (p-1)/2+1;
+  F = zeros(1,p);
+  for j=1:p
+    F(j)=exp(b*(j-i)^2); 
+  end
+end
+
+% Normalize coefficients
+F = F/trapz(F);
+
+% Bounce end-effect correction
+if strcmp(correction,'on') == 1
+ [y] = bounce(y,n);
+ tf = t;
+elseif strcmp(correction,'off') == 1
+ tf = t(1+n:N-n);
+end
+
+% Gaussian smoothing filter
+yf = filter(F,1,y);
+yf(1:2*n)=[]; % The assymmetric point deletion compensates for the group delay
+end
+
+%----
