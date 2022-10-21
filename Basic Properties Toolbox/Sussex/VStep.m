@@ -1,4 +1,4 @@
-function out = VStep(clampfile, steps, holding, capacitance, N)
+function out = VStep
 %% Decription
 % Voltage step protocol analysis
 
@@ -11,8 +11,8 @@ function out = VStep(clampfile, steps, holding, capacitance, N)
 %       [file,path] = uigetfile('*.ma');
 %       clampfile = fullfile(path,file);
 %       steps = [-120,80];
-%       holding = -65;
-%       capacitance = 220; 
+%       holding = -65; % fixed holding potential
+%       capacitance = 220; % stored in labbook
 %       N = 10;
 %       output = VStep(clampfile, steps, holding, capacitance, N);
 
@@ -44,22 +44,49 @@ function out = VStep(clampfile, steps, holding, capacitance, N)
 %% Clear the environment
 close all
 
-%% Organise data and plot
+%% Load the file of interest
 
-w = warning ('off','all');
-warning(w)
-
+% ui select file and load
+[file,path] = uigetfile('*.ma');
+clampfile = fullfile(path,file);
 S = ephysIO(clampfile);
 
 % Split into time and waves
 Time = S.array(:,1);
 Waves = S.array(:,2:end);
 
+%% Organise data and plot
+
+w = warning ('off','all');
+warning(w)
+
+
 % cd to path
 splitPath = split(clampfile,filesep);
 newPath = char(string(join(splitPath(1:end-3),"\")));
 cd(newPath)
 
+
+%% Input arguments
+        % prompt the user to select the two inputs here
+        disp('enter input arguments into dialog box here')
+        prompt = {...
+            'Enter initial step value (mV):',...
+            'Enter final step value (mV):',...
+            'Enter incremental step value (mV):',...
+            'Enter holding potential (mV):',...
+            'Enter capacitance (pF):',...
+            'Enter N value (P/N Subtraction):'};
+        dlg_title = 'Input parameters';
+        num_lines = 1;
+        def = {'-120','80','5','-65','220','10'};
+        answer  = inputdlg(prompt,dlg_title,num_lines,def,'on');
+        answer = str2double(answer);
+        steps = [answer(1) answer(2)];
+        increment = answer(3);
+        holding = answer(4);
+        capacitance = answer(5);
+        N = answer(6);
 
 %% run analysis or not?
 % gives the user the option to abort if the data looks horrendous

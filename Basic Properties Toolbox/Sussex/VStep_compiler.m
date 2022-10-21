@@ -36,10 +36,10 @@ E3_control = compiled(strcmp({compiled.Genotype}, 'APOE3') ...
     & strcmp({compiled.Ketamine}, 'No') & strcmp({compiled.Memantine}, 'No'));
 E3_ketamine = compiled(strcmp({compiled.Genotype}, 'APOE3') ...
     & strcmp({compiled.Ketamine}, 'Yes') & strcmp({compiled.Memantine}, 'No'));
-E3_memantine = compiled(strcmp({compiled.genotype}, 'APOE3') ...
-    & strcmp({compiled.ketamine}, 'No') & strcmp({compiled.memantine}, 'Yes'));
-E4_memantine = compiled(strcmp({compiled.genotype}, 'APOE4') ...
-    & strcmp({compiled.ketamine}, 'No') & strcmp({compiled.memantine}, 'Yes'));
+E3_memantine = compiled(strcmp({compiled.Genotype}, 'APOE3') ...
+    & strcmp({compiled.Ketamine}, 'No') & strcmp({compiled.Memantine}, 'Yes'));
+E4_memantine = compiled(strcmp({compiled.Genotype}, 'APOE4') ...
+    & strcmp({compiled.Ketamine}, 'No') & strcmp({compiled.Memantine}, 'Yes'));
 
 %% Calculate Maximum Current Densities
 
@@ -58,6 +58,8 @@ for i = 1:size(E3_ketamine,2)
 E3K_NaAD(i) = (min(E3_ketamine(i).NaAPeak)*1e12)/E3_ketamine(i).Cap;
 E3K_KD(i) = (max(E3_ketamine(i).KMean)*1e12)/E3_ketamine(i).Cap;
 E3K_NaID(i) = (min(E3_ketamine(i).NaAPeak)*1e12)/E3_ketamine(i).Cap;
+[~,ind(i)] = min(E3_ketamine(i).NaAPeak);
+E3K_peak_array(:,i) = E3_ketamine(i).Waves(:,ind(i))/E3_ketamine(i).Cap;
 end
 
 % APOE3 Memantine
@@ -65,6 +67,8 @@ for i = 1:size(E3_memantine,2)
 E3M_NaAD(i) = (min(E3_memantine(i).NaAPeak)*1e12)/E3_memantine(i).Cap;
 E3M_KD(i) = (max(E3_memantine(i).KMean)*1e12)/E3_memantine(i).Cap;
 E3M_NaID(i) = (min(E3_memantine(i).NaAPeak)*1e12)/E3_memantine(i).Cap;
+[~,ind(i)] = min(E3_memantine(i).NaAPeak);
+E3M_peak_array(:,i) = E3_memantine(i).Waves(:,ind(i))/E3_memantine(i).Cap;
 end
 
 ind = [];
@@ -77,18 +81,22 @@ E4C_NaID(i) = (min(E4_control(i).NaAPeak)*1e12)/E4_control(i).Cap;
 E4C_peak_array(:,i) = E4_control(i).Waves(:,ind(i))/E4_control(i).Cap;
 end
 
-% APOE4 Memantine
+% APOE4 Ketaminee
 for i = 1:size(E4_ketamine,2)
 E4K_NaAD(i) = (min(E4_ketamine(i).NaAPeak)*1e12)/E4_ketamine(i).Cap;
 E4K_KD(i) = (max(E4_ketamine(i).KMean)*1e12)/E4_ketamine(i).Cap;
 E4K_NaID(i) = (min(E4_ketamine(i).NaAPeak)*1e12)/E4_ketamine(i).Cap;
+[~,ind(i)] = min(E4_ketamine(i).NaAPeak);
+E4K_peak_array(:,i) = E4_ketamine(i).Waves(:,ind(i))/E4_ketamine(i).Cap;
 end
 
-% APOE4 Ketamine
+% APOE4 Memantine
 for i = 1:size(E4_memantine,2)
 E4M_NaAD(i) = (min(E4_memantine(i).NaAPeak)*1e12)/E4_memantine(i).Cap;
 E4M_KD(i) = (max(E4_memantine(i).KMean)*1e12)/E4_memantine(i).Cap;
 E4M_NaID(i) = (min(E4_memantine(i).NaAPeak)*1e12)/E4_memantine(i).Cap;
+[~,ind(i)] = min(E4_memantine(i).NaAPeak);
+E4M_peak_array(:,i) = E4_memantine(i).Waves(:,ind(i))/E4_memantine(i).Cap;
 end
 
 %% plot maximum sodium activation current densities +/- ketamine
@@ -164,7 +172,7 @@ sgtitle('Maximal NaA Current Density:')
     title('APOE3 vs APOE4 with ketamine')
     ylim([-400 0])
 
-%% plot maximum sodium activation current densities +/- ketamine
+%% plot maximum sodium activation current densities +/- memantine
 colorscheme = ...
     [0 0 0; ...
     0.6350 0.0780 0.1840];
@@ -524,6 +532,25 @@ sgtitle('Maximal K Current Density:')
     ylabel('Current Density (pA/pF)');
     title('APOE3 vs APOE4 with Memantine')
     ylim([0 200])
+
+%% Peak NaA waves for trace overlays
+
+
+E3C_peak_array;
+E4C_peak_array;
+E3K_peak_array;
+E4K_peak_array;
+E3M_peak_array;
+E4M_peak_array;
+
+% baseline subtract each of these arrays independently
+
+% calculate averages of each wave, and pass through a filter
+
+% create exemplary overlay plots of the regions of interest
+
+% save the average traces as arrays for exporting if needed
+
 
 %% Current voltage relationships
 % note, not sure what these are truly supposed to be
