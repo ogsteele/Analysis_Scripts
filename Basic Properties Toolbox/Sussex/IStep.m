@@ -1,9 +1,12 @@
 function [output] = IStep(LPF_Hz, winSize_ms)
 %% Decription
 % Current step protocol analysis, featuring user defined input at various
-% points
+% points. Due to built in ephysIO functionality, the user only needs select
+% the recording file for the first wave in the set of recordings and
+% ephysIO will automatically load the remaining files taking the order from
+% the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.2.2 (last updated: 20/10/2022)
+% IStep v1.2.3 (last updated: 21/10/2022)
 % Author: OGSteele
 %
 % example use;
@@ -36,11 +39,15 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %       Offline_BB - Vm adjustments for offline bridge balance in V
 %       Online_BB_performed = Yes/No 
 %       Offline_BB_performed = Yes/No 
+%       notes - notes input at the end
+%       LPF_Hz - Low pass filter cut off in Hz applied to AP wave
+%       winSize_ms - Window size in ms for detection of action potentials
 %
 % inputs
 %       LPF_Hz is the low pass filter cut off in Hz (only ndiff filtered)
 %       winSize_ms is the AP window size in ms (peak index +/- winsize/2)  
 %
+% -----
 % Note on Inputs
 % Generally, the faster the AP, the lower the LPF_Hz cutoff required
 %   tested on (approximate appropriate filter cutoff); 
@@ -52,12 +59,13 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %       - cultured iPSC derived neurons @ RT (50 ms)
 % Advised to use devThresh.m script to determine optimal values
 %
+% -----
 % Dependancies
 %   - Signal Processing Toolbox (mathworks)
 
 %% Update Log
 
-% 17.09.22 [OGS]
+% 17.09.22 [OGS]v1.1
 %   - improve cross platform functionality (filesep throughout)
 %   - move saved figure and output to the root folder of the recording
 %   - correct file naming bug
@@ -69,7 +77,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   - included the use of ephysIO inside the script for ease of use
 %   - tidied up description
 
-% 04.10.22 [OGS]
+% 04.10.22 [OGS] v1.2.1
 %   - implemented robust threshold detection (initial peak of 2div)
 %   - tidied up devThresh and IStep as a package
 %   - introduced LPF_Hz and winSize_ms input arguments
@@ -81,21 +89,37 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   - adjusted minPeakHeight in AP Analysis to prevent double spikes
 %   - included 7 pole medianf to decrease impact of fast noise in Ih Sag
 
-% 20.10.22 [OGS]
+% 20.10.22 [OGS] v1.2.2
 %   - updated dependancies to include readMeta.m and the signal processign
 %   toolbox
 %   - all figures closed on running
 
+% 21.10.22 [OGS] v1.2.3
+%   - clearer description of ephysIO functionality and multiple succesive
+%   file loading (also put in display line about this)
+%   - included dependancies list in devThresh for that to work
+%   independantly also
+%   - introduced catch me if user doesn't select input arguments
+
+
 %% To do list (when Oli finds the time ...) 
 
 % every action potential detail
+
+% further file type support
 
 %% Code
 
 % close figures
 close all
 
+% determine the number of input arguments
+numInputs = nargin;
+
 % load file of interest
+disp('---------')
+disp('Select the first file (from the first wave) in the recording, ephysIO will load the rest automatically')
+disp('---------')
 [file,path] = uigetfile('*.ma'); % select file of interest
 clampfile = fullfile(path,file); % get full filepath of file
 S = ephysIO(clampfile);
@@ -124,7 +148,9 @@ dlgQuestion = 'Would you like to run the Current Step Analysis?';
 run = questdlg(dlgQuestion,dlgTitle,'Yes','No','No');
 
 if run == "Yes"
+    disp('---------')
     disp('Performing Analysis, please wait ...')
+    disp('---------')
 
     % select region to search for action potentials
     title('Select detection region')
@@ -312,6 +338,22 @@ if run == "Yes"
     
     %% AP analysis
     
+    % catch me if user doesn't select input arguments at the start
+    if numInputs < 2
+        % prompt the user to select the two inputs here
+        disp('enter input arguments into dialog box here')
+        prompt = {...
+            'Enter Low Pass Filter Cutoff (Hz):',...
+            'Enter Window Size (ms):'};
+        dlg_title = 'Input parameters';
+        num_lines = 1;
+        def = {'330','25'};
+        answer  = inputdlg(prompt,dlg_title,num_lines,def,'on');
+        answer = str2double(answer);
+        LPF_Hz = answer(1);
+        winSize_ms = answer(2);
+    end
+
     % determine window size
     % 25 is good for organotypic
     % 50 is good for slower APs
@@ -361,7 +403,6 @@ if run == "Yes"
     
     % LPF_Hz Note <-- faster the action potential, lower the threshold
     % 330 works well for organotypic, 1000 works well for iPSCs
-    
     
     % plot the differntial below the trace
     y = filter1(diffWin,Time(1:size(diffWin,1)),0,LPF_Hz)*5e-8-20; 
@@ -578,6 +619,8 @@ if run == "Yes"
     output.Online_BB_performed = balanced;
     output.Offline_BB_performed = offline_BB_performed;
     output.Notes = notes;
+    output.LPF_Hz = LPF_Hz;
+    output.winSize_ms = winSize_ms;
     
     % navigate to root dir
     cd(newPath) 
@@ -593,7 +636,9 @@ if run == "Yes"
     % return to if loop from the top 
 else
     close(fh) % close figure
+    disp('---------')
     disp('Analysis Aborted, please find a new recording')
+    disp('---------')
 end
 
 
