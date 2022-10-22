@@ -462,7 +462,7 @@ sgtitle('Maximal K Current Density:')
     ylim([0 200])
 
 %% plot maximum potassium current densities +/- Memantine
-K_ket_fig = figure;
+K_mem_fig = figure;
 sgtitle('Maximal K Current Density:')
 
     % APOE3 vs APOE4
@@ -535,21 +535,56 @@ sgtitle('Maximal K Current Density:')
 
 %% Peak NaA waves for trace overlays
 
-
-E3C_peak_array;
-E4C_peak_array;
-E3K_peak_array;
-E4K_peak_array;
-E3M_peak_array;
-E4M_peak_array;
-
 % baseline subtract each of these arrays independently
+% E3C
+baseline = mean(E3C_peak_array(1:500,:));
+E3C_peak_array = E3C_peak_array - baseline;
+% E3K
+baseline = mean(E3K_peak_array(1:500,:));
+E3K_peak_array = E3K_peak_array - baseline;
+% E3M
+baseline = mean(E3M_peak_array(1:500,:));
+E3M_peak_array = E3M_peak_array - baseline;
+% E4C
+baseline = mean(E4C_peak_array(1:500,:));
+E4C_peak_array = E4C_peak_array - baseline;
+% E4K
+baseline = mean(E4K_peak_array(1:500,:));
+E4K_peak_array = E4K_peak_array - baseline;
+% E4M
+baseline = mean(E4M_peak_array(1:500,:));
+E4M_peak_array = E4M_peak_array - baseline;
+
+% peak align traces
+detZone = [1000,4000];
+alignedE3C = peakAlign(E3C_peak_array,detZone);
+alignedE4C = peakAlign(E4C_peak_array,detZone);
+alignedE3K = peakAlign(E3K_peak_array,detZone);
+alignedE4K = peakAlign(E4K_peak_array,detZone);
+alignedE3M = peakAlign(E3M_peak_array,detZone);
+alignedE4M = peakAlign(E4M_peak_array,detZone);
 
 % calculate averages of each wave, and pass through a filter
+meanE3C = mean(alignedE3C,2);
+meanE4C = mean(alignedE4C,2);
+meanE3K = mean(alignedE3K,2);
+meanE4K = mean(alignedE4K,2);
+meanE3M = mean(alignedE3M,2);
+meanE4M = mean(alignedE4M,2);
 
 % create exemplary overlay plots of the regions of interest
+NaC_overlay = figure; plot(meanE3C,'color','black','DisplayName','E3C')
+hold on; plot(meanE4C,'color','red','DisplayName','E4C')
+legend
 
-% save the average traces as arrays for exporting if needed
+NaK_overlay = figure; plot(meanE3C,'color','black','DisplayName','E3C')
+hold on; plot(meanE4K,'color','red','DisplayName','E4K')
+legend
+
+NaM_overlay = figure; plot(meanE3C,'color','black','DisplayName','E3C')
+hold on; plot(meanE4M,'color','red','DisplayName','E4M')
+legend
+
 
 
 %% Current voltage relationships
@@ -589,11 +624,56 @@ end
 
 % figures
 if save_fig == true
-%savefig(NaA_fig, 'NaA_fig')
+% save Ket treatment figs
 savefig(NaA_ket_fig, 'NaA_ket_fig')
-%savefig(K_fig,'K_fig')
 savefig(K_ket_fig,'K_ket_fig')
-%savefig(NaI_fig,'NaI_fig')
 savefig(NaI_ket_fig, 'NaI_ket_fig')
+% save Mem treatment figs
+savefig(NaA_mem_fig, 'NaA_mem_fig')
+savefig(K_mem_fig,'K_mem_fig')
+savefig(NaI_mem_fig, 'NaI_mem_fig')
+% save Na Overlay Figs
+savefig(NaC_overlay,'NaC_overlay')
+savefig(NaK_overlay,'NaC_overlay')
+savefig(NaM_overlay,'NaC_overlay')
 else 
+end
+
+
+% --------------
+function alignedArray = peakAlign(y,time)
+%
+% input arguments
+%   array = x * y array output from ephysIO
+%   time = [a,b] of time points in data points
+%
+% output arguments
+%   alignedArray = peak aligned array of peak within time
+%
+% example usage
+%   S = ephysIO(clampfile)
+%   x = S.array(:,1)
+%   y = S.array(:,2:end)
+%   time = [1000,4000]
+%   alignedArray = peakAlign(y,time)
+%
+% Note
+%   Data loss is quite aggressive, but works for this usage. Consider
+%   improving in future if use is to become more ubiquitous in code.
+%% CODE
+
+% locate minimum indexes within region of interest
+ [~,ind] = min(y(time(1):time(2),:));
+corrInd = ind + time(1); % correct for drift associated with peak detection
+
+% determine the peak differences relative to the smallest
+[val,~] = min(corrInd); % earliest peak and wave number
+indDiff = (corrInd - val)+1; % differences in each peak index
+
+% trim the start of the arrays, and concatenate arrays
+alignedArray = zeros(sum(time)*2,size(y,2));
+for i = 1:size(y,2)
+    alignedArray(:,i) = y(indDiff(i):(indDiff(i)+(sum(time)*2))-1,i);
+end
+
 end
