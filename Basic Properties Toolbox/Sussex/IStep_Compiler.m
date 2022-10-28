@@ -299,9 +299,9 @@ legend(memlabels(3:4),'linewidth',1,'location','northwest'); box off; set(gca,'l
 xlabel('Current Injected (pA)'); ylabel('Number of Action Potentials'); title('E4 +/- Memantine')
 ylim([0 14])
 
-subplot(1,4,4); plot(pA,E3M_aveSpikes,'color',[0 0 0]); 
+subplot(1,4,4); plot(pA,E3C_aveSpikes,'color',[0 0 0]); 
 hold on; plot(pA,E4M_aveSpikes,'color',[0.6350 0.0780 0.1840]); 
-errorbar(pA,E3M_aveSpikes,E3M_aveSpikesSEM,'HandleVisibility','off','color',[0 0 0])
+errorbar(pA,E3C_aveSpikes,E3C_aveSpikesSEM,'HandleVisibility','off','color',[0 0 0])
 errorbar(pA,E4M_aveSpikes,E4M_aveSpikesSEM,'HandleVisibility','off','color',[0.6350 0.0780 0.1840])
 legend('E3 Memantine','E4 Memantine','linewidth',1,'location','northwest'); box off; set(gca,'linewidth',2); set(gcf,'color','white')
 xlabel('Current Injected (pA)'); ylabel('Number of Action Potentials'); title('E3 vs E4 + Memantine')
