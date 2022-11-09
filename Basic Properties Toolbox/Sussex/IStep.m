@@ -6,7 +6,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.2.3 (last updated: 21/10/2022)
+% IStep v1.2.4 (last updated: 09/11/2022)
 % Author: OGSteele
 %
 % example use;
@@ -100,6 +100,15 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   - included dependancies list in devThresh for that to work
 %   independantly also
 %   - introduced catch me if user doesn't select input arguments
+
+% 09.11.22 [OGS] v1.2.4
+%   - transparent labelling of rise and fall times, however benefit of this
+%   is limited due it being an overlay of the actual trace that is thicker.
+%   Consider amending this in future. 
+%   - corrected IR bug where offline bridge balance correction was
+%   performed before the output structure was created, but after the figure
+%   was plotted. Shouldn't change the analysis, but confusing none the
+%   less. 
 
 
 %% To do list (when Oli finds the time ...) 
@@ -434,7 +443,7 @@ if run == "Yes"
     rise_20_ind = closestIndex_20 + ind_t;
     rise_80_ind = closestIndex_80 + ind_t;
     Rise = mean(gradient(AP_Window(rise_20_ind:rise_80_ind)));
-    hold on; plot((rise_20_ind:rise_80_ind),AP_Window(rise_20_ind:rise_80_ind)-Base,'linewidth',3,'color','black')
+    hold on; plot((rise_20_ind:rise_80_ind),AP_Window(rise_20_ind:rise_80_ind)-Base,'linewidth',3,'color',[0,0,0,0.5])
     
     % Repolarisation Rate
     
@@ -447,7 +456,7 @@ if run == "Yes"
     fall_20_ind = closestIndex_80 + ind_o;
     fall_80_ind = closestIndex_20 + ind_o;
     Fall = mean(gradient(AP_Window(fall_20_ind:fall_80_ind)));
-    hold on; plot((fall_20_ind:fall_80_ind),AP_Window(fall_20_ind:fall_80_ind)-Base,'linewidth',3,'color','red')
+    hold on; plot((fall_20_ind:fall_80_ind),AP_Window(fall_20_ind:fall_80_ind)-Base,'linewidth',3,'color',[1,0,0,0.5])
     
     legend('trace','peak', ...
         'amplitude','halfwidth', ...
@@ -487,7 +496,7 @@ if run == "Yes"
     R = deltaV / I; % R (Ohms)
     IR = R / 1e6; % R (MegaOhms)
     txt = {['\bf Input Resistance: '],[num2str(IR) ' M\Omega \rightarrow']};
-    hold on; text(0.7,(mean(Waves(IR_start:IR_end,2))*1000) + 15,txt)
+    hold on; IRtext = text(0.7,(mean(Waves(IR_start:IR_end,2))*1000) + 15,txt);
     
     %% Sub-AP Vm values
     Vm_start = round(detEnd - (detDur/2)); % start of the steady state zone
@@ -576,6 +585,23 @@ if run == "Yes"
         I = abs(pA(1)*1e-12 - pA(2)*1e-12); % I (Amps)
         R = deltaV / I; % R (Ohms)
         IR = R / 1e6; % R (MegaOhms)
+        % replot the whole of that IR figure
+        figure(fh); delete(IRtext)
+            subplot(7,4,[19,23,27]); plot(Time,Waves(:,1)*1000,'color','black'); hold on; plot(Time,Waves(:,3)*1000,'color','red')
+            box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+            xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
+            lgd = legend(char(string(pA(1))),char(string(pA(3))),...
+                'linewidth',1,...
+                'location','southeast',...
+                'AutoUpdate','off');
+            title(lgd,'Current (pA)')
+            title('Input Resistance Calculation')
+            %show lines for region of IR determination
+            hold on; xline(1.5,'--'); xline(1.3,'--')
+            
+            % Calculate Input Resistance in MegaOhms
+            txt = {['\bf Input Resistance: '],[num2str(IR) ' M\Omega \rightarrow']};
+            hold on; IRtext = text(0.7,(mean(Waves(IR_start:IR_end,2))*1000) + 15,txt);
         % thresh
         Threshold = Threshold-(Vm_adjust(wavenum_first)*1000);
         % afterhyp
@@ -627,11 +653,11 @@ if run == "Yes"
     %chdir(fullfile('..','..'))
     
     % save output
-    outname = split(strtrim(clampfile),filesep);
-    outname = char(string(outname(end-2))); % name the output the same as the folder the recording came from
-    saveas(fh,[outname,'_master.fig']); % save the master fig
-    saveas(fh2,[outname,'_subAP.fig']); % save the subAP_Vm fig
-    save([outname,'.mat'],'output')
+    %outname = split(strtrim(clampfile),filesep);
+    %outname = char(string(outname(end-2))); % name the output the same as the folder the recording came from
+    %saveas(fh,[outname,'_master.fig']); % save the master fig
+    %saveas(fh2,[outname,'_subAP.fig']); % save the subAP_Vm fig
+    %save([outname,'.mat'],'output')
     
     % return to if loop from the top 
 else
