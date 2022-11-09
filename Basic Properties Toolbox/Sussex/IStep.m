@@ -109,6 +109,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   performed before the output structure was created, but after the figure
 %   was plotted. Shouldn't change the analysis, but confusing none the
 %   less. 
+%   - optional save loop at the end
 
 
 %% To do list (when Oli finds the time ...) 
@@ -652,13 +653,19 @@ if run == "Yes"
     cd(newPath) 
     %chdir(fullfile('..','..'))
     
-    % save output
-    %outname = split(strtrim(clampfile),filesep);
-    %outname = char(string(outname(end-2))); % name the output the same as the folder the recording came from
-    %saveas(fh,[outname,'_master.fig']); % save the master fig
-    %saveas(fh2,[outname,'_subAP.fig']); % save the subAP_Vm fig
-    %save([outname,'.mat'],'output')
+    dlgTitle    = 'Save output';
+    dlgQuestion = 'Would you like to save the outputs?';
+    saveout = questdlg(dlgQuestion,dlgTitle,'Yes','No','Yes');
     
+    if saveout == "Yes"
+        % save output
+        outname = split(strtrim(clampfile),filesep);
+        outname = char(string(outname(end-2))); % name the output the same as the folder the recording came from
+        saveas(fh,[outname,'_master.fig']); % save the master fig
+        saveas(fh2,[outname,'_subAP.fig']); % save the subAP_Vm fig
+        save([outname,'.mat'],'output')
+        else
+    end
     % return to if loop from the top 
 else
     close(fh) % close figure
