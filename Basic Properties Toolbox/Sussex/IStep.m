@@ -6,7 +6,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.2.4 (last updated: 09/11/2022)
+% IStep v1.2.5 (last updated: 15/11/2022)
 % Author: OGSteele
 %
 % example use;
@@ -111,7 +111,8 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   less. 
 %   - optional save loop at the end
 
-
+% 15.11.22 [OGS] v1.2.5
+%   - inclusion of waitbar to tell users not to close figures during saving
 %% To do list (when Oli finds the time ...) 
 
 % every action potential detail
@@ -658,12 +659,18 @@ if run == "Yes"
     saveout = questdlg(dlgQuestion,dlgTitle,'Yes','No','Yes');
     
     if saveout == "Yes"
+        f = waitbar(0,'Saving master figure ...');
+        set(f,'Name','Saving output, do not close figures');
         % save output
         outname = split(strtrim(clampfile),filesep);
         outname = char(string(outname(end-2))); % name the output the same as the folder the recording came from
         saveas(fh,[outname,'_master.fig']); % save the master fig
+            waitbar(.33,f,'Saving sub action potential Vm figure ...');
         saveas(fh2,[outname,'_subAP.fig']); % save the subAP_Vm fig
+            waitbar(.67,f,'Saving output data structure ...');
         save([outname,'.mat'],'output')
+            waitbar(1,f,'Finishing');
+            close(f)
         else
     end
     % return to if loop from the top 
