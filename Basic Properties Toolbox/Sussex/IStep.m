@@ -26,7 +26,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %       Rh - Rheobase in pA
 %       sag_mV - Ih Sag Amplitude in mV
 %       sag_ratio - Ih Sag : steady state ratio
-%       peak - Overshoot in mV
+%       peak - Overshoot in mV (note, not same as figure)
 %       afterhyp - Afterhyperpolarisation value in mV
 %       amp - Action potential amplitude in mV
 %       thresh - Threshold potential in mV
@@ -113,6 +113,20 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 
 % 15.11.22 [OGS] v1.2.5
 %   - inclusion of waitbar to tell users not to close figures during saving
+
+% 07.12.22 [OGS] v1.2.6
+%   - clarification of point relating to peak in output and peak in figure.
+%   The figure value is not real, as it's adjusted to place the baseline at
+%   0 mV. The overall amplitude value is therefore not affected. The peak
+%   found in the output corresponds to the non-baseline adjusted value, ie
+%   the true most positive value. This value is adjusted during offline
+%   bridge balancing. 
+%   - Note: Offline bridge balancing not always appropriate when the offset
+%   is positive rather than negative. 
+%   - Also noted strange occurance of pA corruption in the waveform on
+%   certain recordings. Appears inconsistent, may be affected by OneDrive?
+%   Changes the order of magnitude of the pA waveform (-2e-10 to
+%   -4e-9). Will continue to investigate. 
 %% To do list (when Oli finds the time ...) 
 
 % every action potential detail
