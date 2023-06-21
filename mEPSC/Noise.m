@@ -98,7 +98,7 @@ cd ..
 % Select recording summary came from
 title_str = "2. Select the recording summary.txt came from";
 if ~ispc; menu(title_str,'OK'); end
-[file,~,~] = uigetfile('*.phy');
+[file,~,~] = uigetfile('*.*');
 clear title_str ans
 
 % save as name of file in dir
