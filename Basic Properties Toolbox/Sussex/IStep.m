@@ -6,7 +6,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.2.5 (last updated: 15/11/2022)
+% IStep v1.2.7 (last updated: 12/07/23)
 % Author: OGSteele
 %
 % example use;
@@ -127,6 +127,11 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   certain recordings. Appears inconsistent, may be affected by OneDrive?
 %   Changes the order of magnitude of the pA waveform (-2e-10 to
 %   -4e-9). Will continue to investigate. 
+
+% 12.07.23 [ACP] v1.2.7
+%   - fixed bug in Ih sag calculation that estimated the Ih sag from
+%   assumed Vm of -65 mV rather than the measured value
+%   - calculation of Ih Sag ratio as 1 minus this value
 %% To do list (when Oli finds the time ...) 
 
 % every action potential detail
@@ -194,6 +199,7 @@ if run == "Yes"
     xline(baseline(2),'linestyle','--','color','green','linewidth',2)
     legend('Recording Data','AP Detection Region','Baseline Detection Region','linewidth',1)
     title('Detection Regions')
+    Vbase = mean(Waves(baseStart:baseEnd,:)); % determine the baseline (intra-step)
 
     % pause for 2 seconds to allow user to visualise regions, then close
     pause(2)
@@ -349,11 +355,11 @@ if run == "Yes"
     Ih_Sag_Percentage = zeros(1,steadyStateWaveNum);
     for i = 1:steadyStateWaveNum
         [y(i),x(i)] = min(mf_Waves(sagStart:sagEnd,i));
-        SS_Value(i) = mean(mf_Waves(SS_start:SS_end,i)) + 0.065;
-        Ih_Sag_Amp(i) = ((SS_Value(i) - (y(i)+0.065)))*1000; % Sag amplitude in mV
-        Ih_Sag_Percentage(i) = ((SS_Value(i)/y(i)))*100; % Sag percentage
+        SS_Value(i) = mean(mf_Waves(SS_start:SS_end,i));
+        Ih_Sag_Amp(i) = (SS_Value(i)-y(i))*1000; % Sag amplitude in mV
+        Ih_Sag_Percentage(i) = (1-(SS_Value(i)-Vbase(i))/(y(i)-Vbase(i)))*100; % Sag percentage
     end 
-    hold on; yline((SS_Value(1)-0.065)*1000,'--r'); yline((y(1)*1000),'--r');
+    hold on; yline((SS_Value(1))*1000,'--r'); yline((y(1)*1000),'--r');
     ylim([(min(y)*1000) - 20 , max(max(Waves(:,1:steadyStateWaveNum))*1000) + 20]); % make sure graph fits neatly
     
     subplot(7,4,[18,22,26]);
@@ -416,6 +422,7 @@ if run == "Yes"
     box off; grid off; xlabel('Data Points'); ylabel('Adjusted membrane potential');
     set(gca,'linewidth',2); set(gcf,'color','white'); title('Action Potential Analysis');
     ylim([-40 120])
+    xlim([300 1000]) % Fix for Kate
     Halfwidth = (Halfwidth*Time(2))*1000; % Halfwidth in ms
     
     % Action Potential Threshold
