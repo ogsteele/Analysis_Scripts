@@ -18,13 +18,13 @@ clear; close all
 disp('Select event_data.phy')
 [event_file, event_path] = uigetfile('*event_data.phy');
 event_data = ephysIO(append(event_path,event_file));
+cd(event_path)
 
 % load in baseline values from txt files
-idx = strfind(event_path,filesep);
-base_path = event_path(1:idx(end-3));
-cd(base_path)
-base_file = dir('*baseline.txt');
-baseline = table2array(readtable(base_file.name));
+filenameVar = char(table2array(readtable('..\..\filepaths.txt')));
+basename = [filenameVar(3:end-5) '_baseline.txt'];
+cd ..\..\..
+baseline = table2array(readtable(basename));
 
 
 %% Split events into waves
