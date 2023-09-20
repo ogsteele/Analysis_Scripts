@@ -6,7 +6,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.2.7 (last updated: 12/07/23)
+% IStep v1.2.8 (last updated: 20/09/23)
 % Author: OGSteele
 %
 % example use;
@@ -34,7 +34,9 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %       rise - Depolarisation rate in mV/s
 %       fall - Repolarisation rate in mV/s
 %       IR - Input Resistance in MOhm
-%       Vm - sub action potential Vm in mV
+%       Vm - resting membrane potential
+%       Vm_stability - does Vm fluctuate more than 3stdev (caution if so)
+%       subAP_Vm - sub action potential Vm in mV following stimulation
 %       Rs_Init - Access resistance approximated from initial step  in MOhm
 %       Offline_BB - Vm adjustments for offline bridge balance in V
 %       Online_BB_performed = Yes/No 
@@ -62,6 +64,10 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 % -----
 % Dependancies
 %   - Signal Processing Toolbox (mathworks)
+%
+% -----
+% Notes on paths
+% A known issue with Eventer 
 
 %% Update Log
 
@@ -132,6 +138,12 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   - fixed bug in Ih sag calculation that estimated the Ih sag from
 %   assumed Vm of -65 mV rather than the measured value
 %   - calculation of Ih Sag ratio as 1 minus this value
+
+% 20.09.23 [OGS] v1.2.8
+%   - amended description to highlight known issue with path setting that
+%   relates back to ephysIO, possible correction there in future updates. 
+%   - included reporting of Vm as well as flagging potential issue with
+%   seal quality
 %% To do list (when Oli finds the time ...) 
 
 % every action potential detail
@@ -258,6 +270,7 @@ if run == "Yes"
     x = SI.array(:,1); % x is time here
     pA_waveform = SI.array(:,2:end); % y is the array of current data
     Ibase = mean (mean(pA_waveform(baseStart:baseEnd,:))); % determine the baseline (intra-step)
+    Vbase = mean(Waves(baseStart:baseEnd,:)); % resting membrane potential in Vm of each step
     N = size(SI.array,2) - 1; % get the number of waves in the array (minus time)
     lo = dsearchn(x,detection(1)) + 1; % start of the test pulse
     hi = dsearchn(x,detection(2)) - 1; % end of the test pulse
@@ -550,8 +563,30 @@ if run == "Yes"
     subplot(1,2,2); plot(pA(1:wavenum_first-1),subAP_Vm,'-o','color','blue','linewidth',3)
     box off; set(gcf,'color','white'); set(gca,'linewidth',2)
     xlabel('Current Step (pA)'); ylabel('Membrane Potential (mV)');
-    
-    
+
+    %% Vm reporting
+    Vbase = Vbase*1000;  % convert to mV
+    figure; plot(Vbase,'-ob','linewidth', 2)
+    hold on; yline(mean(Vbase)+3*std(Vbase),'--r')
+    hold on; yline(mean(Vbase)-3*std(Vbase),'--r', ...
+        'HandleVisibility','off')
+    box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+    legend('Vm','+/- 2 SD','linewidth',1,'autoupdate','off','location','northeast')
+    xlabel('I Step (#)'); ylabel('Membrane Potential (mV)');
+
+    % save average Vm for output
+    Vm = trimmean(Vbase,10);
+
+    % flagging if out of range
+    stable = any(~inrange(Vbase,[(mean(Vbase) - 3*std(Vbase)) (mean(Vbase) + 3*std(Vbase)) ]));
+    if stable == 0
+    title('Suggested stability check passed')
+    Vm_stability = "stable";
+    else
+    title('Suggested stability check failed')
+    f = msgbox("Caution: Possible unstable patch","Stability Issue","error");
+    Vm_stability = "caution";
+    end
     %% Bridge Balance adjustments
     % apply necessary bridge balance adjustments if the user requested offline
     
@@ -663,7 +698,9 @@ if run == "Yes"
     output.rise = Rise;
     output.fall = Fall;
     output.IR = IR;
-    output.Vm = subAP_Vm;
+    output.Vm = Vm;
+    output.Vm_stability = Vm_stability;
+    output.subAP_Vm = subAP_Vm;
     output.Offline_BB = Vm_adjust;
     output.Online_BB_performed = balanced;
     output.Offline_BB_performed = offline_BB_performed;
@@ -4493,3 +4530,91 @@ yf(1:2*n)=[]; % The assymmetric point deletion compensates for the group delay
 end
 
 %----
+
+function y = inrange(X,R,varargin)
+%INRANGE tests if values are within a specified range (interval).
+%   INRANGE(X,RANGE) tests if the values in X are within the range specified 
+%   by RANGE.  X can be a vector or matrix.  
+%
+%   RANGE is a range in the form [LOW HIGH] against which each value in X will 
+%   be tested.  RANGE can also be a two-column vector whose ith row is of form 
+%   RANGE(i,:) = [LOW HIGH].  In this form, input X must be a vector with the
+%   same length as RANGE, and each element of X is tested against the
+%   range in the corresponding row of RANGE.
+%
+%   INRANGE(X,RANGE,BOUNDARY) specifies whether the endpoints of the specified 
+%   range should be included or excluded from the interval.  The options for 
+%   BOUNDARY are:
+%
+%       'includeboth' : Both end points included in interval (default)
+%       'includeleft' : Left end point only included in interval
+%       'includeright': Right end point only included in interval
+%       'excludeboth' : Neither end point included in interval
+%
+%   If the LOW and HIGH values for RANGE are equal, that single value will be 
+%   found in range only under the 'includeboth' option (default). Otherwise, 
+%   for this case, no values will be found in range.
+%
+%   Examples:  
+%      X = 1:10
+%      X =
+%          1     2     3     4     5     6     7     8     9    10
+%
+%      Y = inrange(X,[5 7.2],'includeboth')
+%      Y =
+%          0     0     0     0     1     1     1     0     0     0
+%
+%      Y = inrange(X,[5 7.2],'excludeboth')
+%      Y =
+%          0     0     0     0     0     1     1     0     0     0
+%
+%   See also ISVALID.
+%Version 2: Per online comment from "Jos x" (thanks!), fixed the following:
+% 1) no need for find, use logical indexing;  DONE
+% 2) return a logical array (false/true) instead of a zero/one array; DONE
+% 3) for a 1x2 input R you do no need the repmat, as you split it into two
+%    scalars; DONE
+% 4) reduce overhead: first get the size of X, than use X = X(:), and
+%    finally reshape Y using the stored size of X; DONE
+% 5) why not make a default value for boundary DONE
+% 6) it may return some unexpected results when LOW==HIGH;  I DONT SEE IT,
+%    but will add a comment.
+% 7) Take a look at submission #9428 by John D'Errico how to implement
+%    "boundary" effectively.  SORRY, TOO LAZY.
+Narg = nargin;
+error(nargchk(2,3,Narg,'struct'))
+if Narg==2
+    boundary = 'includeboth';
+else
+    boundary = varargin{1};
+end
+XoriginalDim = size(X);
+X = X(:);
+if numel(R) ~= 2,
+    if ~isequal(size(R,2),2),
+        error('RANGE input has too many columns.')
+    end
+    if ~isequal(size(R,1),numel(X))
+        error('If RANGE is a matrix, X must be a vector of same length.')
+    end
+end
+Rrep = R;
+leftBound = R(:,1);
+rightBound = R(:,2);
+if any(leftBound > rightBound),
+    error('Rows of RANGE must have form [LOW HIGH].')
+end
+switch boundary
+    case 'includeboth',
+        inRangeIX = (X >= leftBound) & (X <= rightBound);
+    case 'includeleft',
+        inRangeIX = (X >= leftBound) & (X < rightBound);
+    case 'includeright',
+        inRangeIX = (X > leftBound) & (X <= rightBound);
+    case 'excludeboth',
+        inRangeIX = (X > leftBound) & (X < rightBound);
+    otherwise
+        error('Valid options for third input are ''includeboth'', ''includeleft'', ''includeright'', ''excludeboth''.')
+end
+y = reshape(inRangeIX,XoriginalDim);
+end
