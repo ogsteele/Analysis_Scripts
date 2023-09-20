@@ -67,7 +67,14 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %
 % -----
 % Notes on paths
-% A known issue with Eventer 
+% Users should avoid having data stored on the path as this can confuse
+% ephysIO. Users should avoid storing data on the path if that data is 
+% stored in sequential folders ('001', '002' etc) that has a higher folder 
+% number than the data you're telling it to analyse (ie, the data on the 
+% path has 31 folders and the data you're interested in analysing has 30 
+% folders) as this will cause ephysIO, and therefore IStep, to 
+% throw an error ('cannot change to folder xxx as it is non-existant'
+% and terminate the function prematurely.
 
 %% Update Log
 
@@ -141,7 +148,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 
 % 20.09.23 [OGS] v1.2.8
 %   - amended description to highlight known issue with path setting that
-%   relates back to ephysIO, possible correction there in future updates. 
+%   relates back to ephysIO, an expected behaviour. 
 %   - included reporting of Vm as well as flagging potential issue with
 %   seal quality
 %% To do list (when Oli finds the time ...) 
