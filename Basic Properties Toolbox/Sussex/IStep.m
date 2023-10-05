@@ -1,4 +1,4 @@
-function [output] = IStep(LPF_Hz, winSize_ms)
+function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 %% Decription
 % Current step protocol analysis, featuring user defined input at various
 % points. Due to built in ephysIO functionality, the user only needs select
@@ -6,12 +6,12 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.2.9 (last updated: 27/09/23)
+% IStep v1.3 (last updated: 05/10/23)
 % Author: OGSteele
 %
 % example use;
 %       output = IStep(LPF_Hz, winSize_ms);
-%       eg. cellOne = IStep(330,25)
+%       eg. cellOne = IStep(330,25,300)
 %
 % output 
 %   is a matlab structure containing the following;
@@ -38,6 +38,11 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %       Vm_stability - does Vm fluctuate more than 3stdev (caution if so)
 %       subAP_Vm - sub action potential Vm in mV following stimulation
 %       Rs_Init - Access resistance approximated from initial step  in MOhm
+%       peakTimes - time of peaks in s
+%       peakAmps - overshoot of peaks in mV
+%       ISI - interspike interval in s
+%       peakHz - instantaneous spike frequency in Hz
+%       adaptIndex - adaptation index
 %       Offline_BB - Vm adjustments for offline bridge balance in V
 %       Online_BB_performed = Yes/No 
 %       Offline_BB_performed = Yes/No 
@@ -47,7 +52,8 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %
 % inputs
 %       LPF_Hz is the low pass filter cut off in Hz (only ndiff filtered)
-%       winSize_ms is the AP window size in ms (peak index +/- winsize/2)  
+%       winSize_ms is the AP window size in ms (peak index +/- winsize/2)
+%       adaptI is the current step value (pA) to analyse adaptation at
 %
 % -----
 % Note on Inputs
@@ -78,7 +84,7 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 
 %% Update Log
 
-% 17.09.22 [OGS]v1.1
+% 17.09.22 [OGS] v1.1
 %   - improve cross platform functionality (filesep throughout)
 %   - move saved figure and output to the root folder of the recording
 %   - correct file naming bug
@@ -160,6 +166,10 @@ function [output] = IStep(LPF_Hz, winSize_ms)
 %   - added hard toggle for saving of figures to save on time taken and
 %   storage space required (on by default)
 %   - stopped code from crashing if cancelled file selection
+
+% 05.10.23 [OGS] v1.3
+%   - Inclusion of spike frequency adaptation at a given stimulus
+%   intesnsity
 
 %% Code
 
@@ -605,6 +615,137 @@ else % if filepath is longer than 5 characters, file selected
         f = msgbox("Caution: Possible unstable patch","Stability Issue","error");
         Vm_stability = "caution";
         end
+
+        %% Spike Frequency Adaptation
+        % plot whole of current step protocol
+        fh4 = figure();
+        fh4.WindowState = 'maximized'; subplot(7,3,[1,4]); plot(Time,Waves*1000,'color','black','HandleVisibility','off')
+        box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+        ylabel('Membrane Potential (mV)');
+        title('Current Step Waveform')
+        ax = gca; xax = ax.XAxis; set(xax,'visible','off')
+        hold on
+        xline(detection(1),'linestyle','--','color','blue','linewidth',2,'HandleVisibility','off') % detection start
+        xline(detection(2),'linestyle','--','color','blue','linewidth',2) % detection end
+        xline(baseline(1),'linestyle','--','color','green','linewidth',2,'HandleVisibility','off') % baseline start
+        xline(baseline(2),'linestyle','--','color','green','linewidth',2) % baseline end
+        hold off
+        legend('Detection Region','Baseline Region','linewidth',1)
+    
+        % plot waveform of current step read from second channel of clampfit
+        SI = ephysIO({clampfile,2}); % load in the current data
+        x = SI.array(:,1); % x is time here
+        pA_waveform = SI.array(:,2:end); % y is the array of current data
+        Ibase = mean (mean(pA_waveform(baseStart:baseEnd,:))); % determine the baseline (intra-step)
+        N = size(SI.array,2) - 1; % get the number of waves in the array (minus time)
+        lo = dsearchn(x,detection(1)) + 1; % start of the test pulse
+        hi = dsearchn(x,detection(2)) - 1; % end of the test pulse
+        pA = zeros(1,N); % preallocate a blank series of steps
+        for i = 1:N
+           pA(i) = mean (pA_waveform(round(lo+(detEnd-detStart)*0.1):...
+               round(hi-(detEnd-detStart)*0.1),i)); % fill the steps with the mean of each step
+        end
+        pA = fix((pA - Ibase) * 1e+12); % round to zero, baseline subtract and put into pA
+        subplot(7,3,7); plot(x,(pA_waveform-Ibase)*1e12,'linewidth',1,'color','black','HandleVisibility','off')
+        box off; set(gca,'linewidth',2); set(gcf,'color','white');
+        xlabel('Time (s)'); ylabel('Command(pA)'); ylim([min(min(pA_waveform*1e12))-50,max(max(pA_waveform*1e12))+50])
+        ax = gca; yax = ax.YAxis; set(yax,'TickDirection','out')
+        hold on
+        xline(detection(1),'linestyle','--','color','blue','linewidth',2,'HandleVisibility','off') % detection start
+        xline(detection(2),'linestyle','--','color','blue','linewidth',2) % detection end
+        xline(baseline(1),'linestyle','--','color','green','linewidth',2,'HandleVisibility','off') % baseline start
+        xline(baseline(2),'linestyle','--','color','green','linewidth',2) % baseline end
+        hold off
+    
+        % catch for scaling error
+        if sum(pA) > 10000
+            pA = [-200:20:400];
+        else
+        end
+
+         % catch me if user doesn't select input arguments at the start
+        if numInputs < 3
+            % prompt the user to select the input here
+            disp('enter current value (pA) to analyse spike frequency adaptation at')
+            prompt = {...
+                'Enter adaptation stimulation value (pA):'};
+            dlg_title = 'Adaptation stimulation value input';
+            num_lines = 1;
+            def = {'300'};
+            answer  = inputdlg(prompt,dlg_title,num_lines,def,'on');
+            answer = str2double(answer);
+            adaptI = answer(1);
+        end
+        % Plot the wave of interest, in our case closest to 300 pA
+        % stimulation
+        [val,ind] = min(abs(pA-adaptI));
+        subplot(7,3,[2,5,8]);
+        plot(Time,Waves(:,ind)*1000,'color','red'); hold on; plot(Time,Waves(:,11)*1000,'color','black')
+        box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+        xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
+        lgd = legend(char(string(pA(ind))),char(string(pA(11))),'linewidth',1);
+        title(lgd,'Current (pA)')
+        title('Exemplary Waves')
+    
+        % extract and plot peak coordinates
+        peakInd = cell2mat(locs(ind));
+        peakVal = cell2mat(pks(ind));
+        peakTimes = zeros(size(peakInd));
+        peakAmps = zeros(size(peakVal));
+        for pI = 1:size(peakTimes,1)
+            peakTimes(pI) = Time(peakInd(pI)+detStart);
+            peakAmps(pI) = peakVal(pI)*1000;
+        end
+        plot(peakTimes,peakAmps,'--ob','DisplayName','Peak Intervals')
+    
+        % convert to instantaneous frequency and plot
+        ISI = diff(peakTimes);
+        peakHz = 1./ISI;
+        subplot(7,3,[3,6,9])
+        plot(peakHz,'-o',...
+            'LineWidth',1,...
+            'MarkerSize',10,...
+            'MarkerEdgeColor','r')
+        box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+        xlabel('Interspike Interval #'); ylabel('Instantaneous Frequency (Hz)');
+        legend('Spike Frequency','linewidth',1)
+    
+        % calculate adaptation index and plot
+        adaptIndex = ISI(1)/ISI(end);
+        subplot(7,3,[13,16,19]);
+        names = char('','Initial','Final','');
+        x = [2,3];
+        y = [ISI(1),ISI(end)];
+        plot(x,y,'--ob',...
+            'LineWidth',1.5,...
+            'MarkerSize',6,...
+            'MarkerEdgeColor','r')
+        box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+        set(gca,'XTick',1:4,'XTickLabel',names)
+        xlim([1,4]);
+        xlabel('Interspike Interval #'); ylabel('Insterspike Interval (s)');
+        txt = {['Adaptation Index: '],[num2str(adaptIndex)]};
+        annotation('textbox','String',txt,'Position',subplot(7,3,[13,16,19]).Position,'VerticalAlignment','top','HorizontalAlignment','right','FitBoxToText','on','linewidth',1.5);
+    
+        % plot as inst freq over time with raster and current injection
+        subplot(7,3,[14:15,17:18,20:21]);
+        fTime(1:2) = [0,peakTimes(1)-0.0001];
+        for fT = 1:size(peakTimes,1)
+            fTime(2+fT) = peakTimes(fT);
+        end
+        fVals(1:3) = [0,0,0];
+        for fV = 1:size(peakHz,1)
+            fVals(3+fV) = peakHz(fV);
+        end
+        plot(fTime,fVals,'linewidth',1.5,'DisplayName','Instantaneous Frequency (Hz)')
+        xlabel('Time (s)'); ylabel('Instantaneous Frequency (Hz)');
+        hold on; plot(peakTimes(1),65,"|",'color','r','linewidth',3,'MarkerSize',10,'DisplayName','Spikes')
+        hold on; plot(peakTimes,65,"|",'color','r','linewidth',3,'MarkerSize',10,'HandleVisibility','off')
+        box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+        x = [0.5,1.5]; y = [-10,-10]; hold on; line(x,y,'linewidth',10,'color','black','DisplayName','Current Injection')
+        legend('linewidth',1)
+        xlim([0.4,1.4]); ylim([-20,70])
+   
         %% Bridge Balance adjustments
         % apply necessary bridge balance adjustments if the user requested offline
         
@@ -719,6 +860,11 @@ else % if filepath is longer than 5 characters, file selected
         output.Vm = Vm;
         output.Vm_stability = Vm_stability;
         output.subAP_Vm = subAP_Vm;
+        output.peakTimes = peakTimes;
+        output.peakAmps = peakAmps;
+        output.ISI = ISI;
+        output.peakHz = peakHz;
+        output.adaptIndex = adaptIndex;
         output.Offline_BB = Vm_adjust;
         output.Online_BB_performed = balanced;
         output.Offline_BB_performed = offline_BB_performed;
@@ -742,11 +888,13 @@ else % if filepath is longer than 5 characters, file selected
             outname = char(string(outname(end-2))); % name the output the same as the folder the recording came from
             if figsave == 1
                 saveas(fh,[outname,'_master.fig']); % save the master fig
-                    waitbar(.25,f,'Saving master figure ...');
+                    waitbar(.2,f,'Saving master figure ...');
                 saveas(fh2,[outname,'_subAP.fig']); % save the subAP_Vm fig
-                    waitbar(.5,f,'Saving sub action potential Vm figure ...');
+                    waitbar(.4,f,'Saving sub action potential Vm figure ...');
                 saveas(fh3,[outname,'_Vm_stability.fig']); % save the subAP_Vm fig
-                    waitbar(.75,f,'Saving Vm stabilitiy figure ...');
+                    waitbar(.6,f,'Saving Vm stabilitiy figure ...');
+                saveas(fh4,[outname,'_adapt.fig']);
+                    waitbar(.8,f,'Saving adaptation figure ...')
             else
             end
             save([outname,'.mat'],'output')
@@ -762,9 +910,9 @@ else % if filepath is longer than 5 characters, file selected
         disp('---------')
 end
 end
-
-
 end
+
+
 %% Dependencies
 % ephysIO
 % Function File: ephysIO
