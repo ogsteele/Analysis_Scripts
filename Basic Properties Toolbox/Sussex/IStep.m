@@ -6,7 +6,7 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.3 (last updated: 05/10/23)
+% IStep v1.3.1 (last updated: 01/11/23)
 % Author: OGSteele
 %
 % example use;
@@ -171,6 +171,16 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 %   - Inclusion of spike frequency adaptation at a given stimulus
 %   intesnsity
 
+% 1.11.23 [OGS] v1.3.1
+%   - Increase window to 1s following current injection to catch delayed
+%   charging of membrane. Not sure this is long term fix, and will look to
+%   include plotting of this region
+%   - Made the calculation of IR much more robust with averaging of three
+%   different IR's before the onset of Ih current contamination. Will need
+%   to consider display of this information.
+%   - Made searching for the zerowave more robust, as it now finds the
+%   absolute minimum rather than hard coding zero.
+
 %% Code
 
 % figure save toggle
@@ -329,7 +339,7 @@ else % if filepath is longer than 5 characters, file selected
                 outs(lp) = outs(lp) + detStart; % account for the detection zone
             end
         end
-        logicalIndexes =  outs < 27500 & outs > 1;
+        logicalIndexes =  outs < 40000 & outs > 1;
         wavenum_first = (size(locs,1)-(sum(logicalIndexes)-1)); % wave that the first action potential following stimulus injection occurs on
         subplot(7,4,[2,6,10]);
         plot(Time,Waves(:,wavenum_first)*1000,'color','red'); hold on; plot(Time,Waves(:,11)*1000,'color','black')
@@ -543,7 +553,7 @@ else % if filepath is longer than 5 characters, file selected
         % plot waves used for input resistance calculation
         subplot(7,4,[19,23,27]); 
         
-        zerowave = find(pA == 0); % find wave closest to zero
+        [v,zerowave] = min(abs(pA)); % find wave closest to zero
 
         plot(Time,Waves(:,zerowave)*1000,'color','red'); 
         hold on; plot(Time,Waves(:,zerowave-3:zerowave-1)*1000,'color','black')
@@ -577,8 +587,9 @@ else % if filepath is longer than 5 characters, file selected
         I = (pA(3)-pA(1))*1e-12; % I (Amps)
         R = deltaV / I; % R (Ohms)
         IR = R / 1e6; % R (MegaOhms)
-        txt = {['\bf Input Resistance: '],[num2str(aveIR) ' M\Omega']};
-        hold on; annotation('textbox',[.2 .5 .3 .3],'String',txt,'FitBoxToText','on');
+        % temporarily hiding this until sorting
+        %txt = {['\bf Input Resistance: '],[num2str(aveIR) ' M\Omega']};
+        %hold on; annotation('textbox',[.2 .5 .3 .3],'String',txt,'FitBoxToText','on');
         
         %% Sub-AP Vm values
         Vm_start = round(detEnd - (detDur/2)); % start of the steady state zone
