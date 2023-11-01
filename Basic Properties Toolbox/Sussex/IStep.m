@@ -512,6 +512,7 @@ else % if filepath is longer than 5 characters, file selected
         % Repolarisation Rate
         
         % identify the closest value (and index) to the threshold value after peak
+        
         N = AP_Window(ind_o:ind_o+ind_a)-Base; % period peak - hyper
         [~, closestIndex_20] = min(abs(N - 0.2*Amplitude.'));
         [~, closestIndex_80] = min(abs(N - 0.8*Amplitude.'));
@@ -540,10 +541,18 @@ else % if filepath is longer than 5 characters, file selected
         % waves
         
         % plot waves used for input resistance calculation
-        subplot(7,4,[19,23,27]); plot(Time,Waves(:,1)*1000,'color','black'); hold on; plot(Time,Waves(:,3)*1000,'color','red')
+        subplot(7,4,[19,23,27]); 
+        
+        zerowave = find(pA == 0); % find wave closest to zero
+
+        plot(Time,Waves(:,zerowave)*1000,'color','red'); 
+        hold on; plot(Time,Waves(:,zerowave-3:zerowave-1)*1000,'color','black')
         box off; set(gcf,'color','white'); set(gca,'linewidth',2)
         xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
-        lgd = legend(char(string(pA(1))),char(string(pA(3))),...
+        lgd = legend(char(string(pA(zerowave))), ...
+            char(string(pA(zerowave-1))),...
+            char(string(pA(zerowave-2))),...
+            char(string(pA(zerowave-3))),...
             'linewidth',1,...
             'location','southeast',...
             'AutoUpdate','off');
@@ -555,12 +564,21 @@ else % if filepath is longer than 5 characters, file selected
         % Calculate Input Resistance in MegaOhms
         IR_start = round(detEnd - (detDur/4)); % start of the steady state zone
         IR_end = detEnd; % end of steady state zone
+
+        for i = 1:3
+            deltaV(i) = abs(mean(Waves(IR_start:IR_end,zerowave)) - mean(Waves(IR_start:IR_end,zerowave-i))); % Delta_Voltage (Volts)
+            I(i) = (pA(zerowave-i)-pA(zerowave))*1e-12; % I (Amps)
+            R(i) = deltaV(i) / I(i); % R (Ohms)
+            IR(i) = R(i) / 1e6; % R (MegaOhms)
+        end
+        aveIR = mean(IR);
+
         deltaV = abs(mean(Waves(IR_start:IR_end,1)) - mean(Waves(IR_start:IR_end,3))); % Delta_Voltage (Volts)
         I = (pA(3)-pA(1))*1e-12; % I (Amps)
         R = deltaV / I; % R (Ohms)
         IR = R / 1e6; % R (MegaOhms)
-        txt = {['\bf Input Resistance: '],[num2str(IR) ' M\Omega \rightarrow']};
-        hold on; IRtext = text(0.7,(mean(Waves(IR_start:IR_end,2))*1000) + 15,txt);
+        txt = {['\bf Input Resistance: '],[num2str(aveIR) ' M\Omega']};
+        hold on; annotation('textbox',[.2 .5 .3 .3],'String',txt,'FitBoxToText','on');
         
         %% Sub-AP Vm values
         Vm_start = round(detEnd - (detDur/2)); % start of the steady state zone
