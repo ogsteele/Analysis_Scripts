@@ -181,6 +181,12 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 %   - Made searching for the zerowave more robust, as it now finds the
 %   absolute minimum rather than hard coding zero.
 
+% 03.11.23 [OGS] v1.3.2
+%   - minor improvement to robustness, removing the hardcoding on 'wave 11'
+%   as 'zerowave'
+%   - removed the zerowave Ih sag as this made no sense and made it hard to
+%   visualise the the average
+
 %% Code
 
 % figure save toggle
@@ -330,6 +336,7 @@ else % if filepath is longer than 5 characters, file selected
         hold off
         
         % First AP of interest values
+        [v,zerowave] = min(abs(pA)); % find wave closest to zero
         C = locs;
         idx = ~cellfun('isempty',C);
         outs = zeros(size(C));
@@ -342,10 +349,10 @@ else % if filepath is longer than 5 characters, file selected
         logicalIndexes =  outs < 40000 & outs > 1;
         wavenum_first = (size(locs,1)-(sum(logicalIndexes)-1)); % wave that the first action potential following stimulus injection occurs on
         subplot(7,4,[2,6,10]);
-        plot(Time,Waves(:,wavenum_first)*1000,'color','red'); hold on; plot(Time,Waves(:,11)*1000,'color','black')
+        plot(Time,Waves(:,wavenum_first)*1000,'color','red'); hold on; plot(Time,Waves(:,zerowave)*1000,'color','black')
         box off; set(gcf,'color','white'); set(gca,'linewidth',2)
         xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
-        lgd = legend(char(string(pA(wavenum_first))),char(string(pA(11))),'linewidth',1);
+        lgd = legend(char(string(pA(wavenum_first))),char(string(pA(zerowave))),'linewidth',1);
         title(lgd,'Current (pA)')
         title('Exemplary Waves')
         
@@ -377,13 +384,13 @@ else % if filepath is longer than 5 characters, file selected
     
         % Plot Ih Sag Waves
         subplot(7,4,[17,21,25]); % creat subplot
-        steadyStateWaveNum = dsearchn(pA',0);% find the wave number with the closest to zerohold on; 
+        steadyStateWaveNum = zerowave-1; % find the wave number with the closest to zerohold on; 
         plot(Time,mf_Waves(:,2:steadyStateWaveNum-1)*1000, 'color',[0.8,0.8,0.8],'HandleVisibility','off') % plot the other of the waves in gray in the background
         hold on; plot(Time,mf_Waves(:,steadyStateWaveNum)*1000,'color','black'); % plot steady state waveth wave (ie, zero input) 
         hold on; plot(Time,mf_Waves(:,1)*1000,'color','red') % plot first wave in red state waveth wave (ie, zero input) 
         box off; set(gcf,'color','white'); set(gca,'linewidth',2)
         xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
-        lgd = legend(char(string(pA(11))),char(string(pA(1))),...
+        lgd = legend(char(string(pA(zerowave))),char(string(pA(1))),...
             'linewidth',1,...
             'location','northwest',...
             'AutoUpdate','off');
@@ -416,6 +423,8 @@ else % if filepath is longer than 5 characters, file selected
         subplot(7,4,[18,22,26]);
         plot(pA(1:steadyStateWaveNum),Ih_Sag_Percentage,'color','black','linewidth',3); box off; title('Ih Sag')
         set(gcf,'color','white'); xlabel('Current Step (pA)'); ylabel('Ih Sag - Steady State Ratio (%)');
+        ylim([0,round(max(Ih_Sag_Percentage)*1.2)]); yline(trimmean(Ih_Sag_Percentage,10),'--b')
+        legend('Ih sag percentage', 'Combined average','linewidth',1)
         set(gca,'linewidth',2)
         
         %% AP analysis
@@ -551,9 +560,7 @@ else % if filepath is longer than 5 characters, file selected
         % waves
         
         % plot waves used for input resistance calculation
-        subplot(7,4,[19,23,27]); 
-        
-        [v,zerowave] = min(abs(pA)); % find wave closest to zero
+        subplot(7,4,[19,23,27]);
 
         plot(Time,Waves(:,zerowave)*1000,'color','red'); 
         hold on; plot(Time,Waves(:,zerowave-3:zerowave-1)*1000,'color','black')
@@ -709,10 +716,10 @@ else % if filepath is longer than 5 characters, file selected
         % stimulation
         [val,ind] = min(abs(pA-adaptI));
         subplot(7,3,[2,5,8]);
-        plot(Time,Waves(:,ind)*1000,'color','red'); hold on; plot(Time,Waves(:,11)*1000,'color','black')
+        plot(Time,Waves(:,ind)*1000,'color','red'); hold on; plot(Time,Waves(:,zerowave)*1000,'color','black')
         box off; set(gcf,'color','white'); set(gca,'linewidth',2)
         xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
-        lgd = legend(char(string(pA(ind))),char(string(pA(11))),'linewidth',1);
+        lgd = legend(char(string(pA(ind))),char(string(pA(zerowave))),'linewidth',1);
         title(lgd,'Current (pA)')
         title('Exemplary Waves')
     
