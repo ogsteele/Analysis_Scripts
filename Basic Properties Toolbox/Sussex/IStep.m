@@ -6,7 +6,7 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.3.1 (last updated: 01/11/23)
+% IStep v1.3.2 (last updated: 03/11/23)
 % Author: OGSteele
 %
 % example use;
