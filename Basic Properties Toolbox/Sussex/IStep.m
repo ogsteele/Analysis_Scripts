@@ -6,7 +6,7 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.3.2 (last updated: 03/11/23)
+% IStep v1.3.3 (last updated: 04/12/23)
 % Author: OGSteele
 %
 % example use;
@@ -186,6 +186,9 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 %   as 'zerowave'
 %   - removed the zerowave Ih sag as this made no sense and made it hard to
 %   visualise the the average
+
+% 04.12.23 [OGS] v1.3.3
+%   - fixed bug of overprocessing seen during calculation of IR 
 
 %% Code
 
@@ -590,10 +593,6 @@ else % if filepath is longer than 5 characters, file selected
         end
         aveIR = mean(IR);
 
-        deltaV = abs(mean(Waves(IR_start:IR_end,1)) - mean(Waves(IR_start:IR_end,3))); % Delta_Voltage (Volts)
-        I = (pA(3)-pA(1))*1e-12; % I (Amps)
-        R = deltaV / I; % R (Ohms)
-        IR = R / 1e6; % R (MegaOhms)
         % temporarily hiding this until sorting
         %txt = {['\bf Input Resistance: '],[num2str(aveIR) ' M\Omega']};
         %hold on; annotation('textbox',[.2 .5 .3 .3],'String',txt,'FitBoxToText','on');
@@ -892,7 +891,7 @@ else % if filepath is longer than 5 characters, file selected
         output.half = Halfwidth;
         output.rise = Rise;
         output.fall = Fall;
-        output.IR = IR;
+        output.IR = aveIR;
         output.Vm = Vm;
         output.Vm_stability = Vm_stability;
         output.subAP_Vm = subAP_Vm;
