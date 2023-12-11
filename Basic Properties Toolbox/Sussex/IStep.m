@@ -6,7 +6,7 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.3.3 (last updated: 04/12/23)
+% IStep v1.3.4 (last updated: 11/12/23)
 % Author: OGSteele
 %
 % example use;
@@ -70,6 +70,7 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 % -----
 % Dependancies
 %   - Signal Processing Toolbox (mathworks)
+%   - Statistics and Machine Learning Toolbox (mathworks)
 %
 % -----
 % Notes on paths
@@ -189,6 +190,9 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 
 % 04.12.23 [OGS] v1.3.3
 %   - fixed bug of overprocessing seen during calculation of IR 
+
+% 11.12.23 [OGS] v1.3.4
+%   - change description of dependancies
 
 %% Code
 

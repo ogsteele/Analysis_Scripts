@@ -207,16 +207,6 @@ end
 % legend("first pulse","last pulse")
 % title("first and last raw test pulses overlaid")
 
-%% Median filter the recording minus the test pulse
-% use as standard now to a) increase consistency, b) increase speed
-poles = 7;
-% menu('Was there perfusion noise present?','Yes','No');
-if perf_noise == 1 
-    disp('Applying 7 pole median filter ...');
-    [splits, nf_splits] = TP_null_MedianF_function(Param,splits,x,poles);
-else
-end
-
 %% Generate necessary whole cell paramaters
 wcp_raw = WCP(splits,Param);
 disp('Generating raw whole cell properties ... ')

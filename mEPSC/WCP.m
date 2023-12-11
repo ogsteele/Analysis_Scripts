@@ -49,8 +49,8 @@ Cm = zeros(size(data,2),1);
 Q = zeros(size(data,2),1);
 for i = 1:size(data,2)
     % calculate the estimated charge
-    time = 0:1/parameters.sample_rate:0.01;                                              % in seconds
-    Q(i) = trapz(time, ((base(i)-(data(parameters.pulse_window,i)))) * 1e-12); % charge in C
+    time = 0:1/parameters.sample_rate:0.05;                                              % in seconds
+    Q(i) = trapz(time', ((base(i)-(data(parameters.pulse_window,i)))) * 1e-12); % charge in C
     % calculate the capacitance
     t = time(end)-time(1);
     Cm(i) = ((Q(i) - Iss(i) * t)   / (parameters.voltage_step / 1000));          % in pF
