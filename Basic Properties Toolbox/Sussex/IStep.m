@@ -6,7 +6,7 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.3.4 (last updated: 11/12/23)
+% IStep v1.3.5 (last updated: 11/01/24)
 % Author: OGSteele
 %
 % example use;
@@ -194,6 +194,11 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 % 11.12.23 [OGS] v1.3.4
 %   - change description of dependancies
 
+% 11.01.24 [AP] v1.3.5
+%   - added support for new and old versions of ACQ4 data files
+%   - fixed bug which caused error if AHP trough is beyond end of AP window
+%   - fixed bugs in adaptation analysis that become apparent if no APs
+
 %% Code
 
 % figure save toggle
@@ -215,7 +220,7 @@ if size(clampfile,2) < 5 % if the filepath is too short to make any sense
     disp('File selection cancelled, code aborted')
     return
 else % if filepath is longer than 5 characters, file selected
-    S = ephysIO(clampfile);
+    S = ephysIO({clampfile,'primary'});
     Time = S.array(:,1);
     Waves = S.array(:,2:end);
     
@@ -317,7 +322,7 @@ else % if filepath is longer than 5 characters, file selected
         legend('Detection Region','Baseline Region','linewidth',1)
         
         % plot waveform of current step read from second channel of clampfit
-        SI = ephysIO({clampfile,2}); % load in the current data
+        SI = ephysIO({clampfile,'command'}); % load in the current data
         x = SI.array(:,1); % x is time here
         pA_waveform = SI.array(:,2:end); % y is the array of current data
         Ibase = mean (mean(pA_waveform(baseStart:baseEnd,:))); % determine the baseline (intra-step)
@@ -469,7 +474,7 @@ else % if filepath is longer than 5 characters, file selected
         % Overshoot in mV
         [Overshoot,ind_o] = max(AP_Window);
         % Afterhyperpolarisation in mV
-        [Afterhyperpolarisation,ind_a] = min(AP_Window(ind_o:end));
+        [Afterhyperpolarisation,ind_a] = min(AP_Window(ind_o+1:end));
         % Baseline
         Base = mean(AP_Window(1:350));
         
@@ -489,7 +494,7 @@ else % if filepath is longer than 5 characters, file selected
         box off; grid off; xlabel('Data Points'); ylabel('Adjusted membrane potential');
         set(gca,'linewidth',2); set(gcf,'color','white'); title('Action Potential Analysis');
         ylim([-40 120])
-        xlim([300 1000]) % Fix for Kate
+        %xlim([300 1000]) % Fix for Kate
         Halfwidth = (Halfwidth*Time(2))*1000; % Halfwidth in ms
         
         % Action Potential Threshold
@@ -671,8 +676,8 @@ else % if filepath is longer than 5 characters, file selected
         hold off
         legend('Detection Region','Baseline Region','linewidth',1)
     
-        % plot waveform of current step read from second channel of clampfit
-        SI = ephysIO({clampfile,2}); % load in the current data
+        % plot waveform of current step read from command channel of clampfit
+        SI = ephysIO({clampfile,'command'}); % load in the current data
         x = SI.array(:,1); % x is time here
         pA_waveform = SI.array(:,2:end); % y is the array of current data
         Ibase = mean (mean(pA_waveform(baseStart:baseEnd,:))); % determine the baseline (intra-step)
@@ -715,75 +720,85 @@ else % if filepath is longer than 5 characters, file selected
             answer = str2double(answer);
             adaptI = answer(1);
         end
-        % Plot the wave of interest, in our case closest to 300 pA
-        % stimulation
-        [val,ind] = min(abs(pA-adaptI));
-        subplot(7,3,[2,5,8]);
-        plot(Time,Waves(:,ind)*1000,'color','red'); hold on; plot(Time,Waves(:,zerowave)*1000,'color','black')
-        box off; set(gcf,'color','white'); set(gca,'linewidth',2)
-        xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
-        lgd = legend(char(string(pA(ind))),char(string(pA(zerowave))),'linewidth',1);
-        title(lgd,'Current (pA)')
-        title('Exemplary Waves')
-    
-        % extract and plot peak coordinates
-        peakInd = cell2mat(locs(ind));
-        peakVal = cell2mat(pks(ind));
-        peakTimes = zeros(size(peakInd));
-        peakAmps = zeros(size(peakVal));
-        for pI = 1:size(peakTimes,1)
-            peakTimes(pI) = Time(peakInd(pI)+detStart);
-            peakAmps(pI) = peakVal(pI)*1000;
+        adaptIndex = NaN;
+        peakTimes = NaN;
+        peakAmps = NaN;
+        peakHz = NaN;
+        ISI = NaN;
+        if ~isnan(adaptI)
+            % Plot the wave of interest, in our case closest to 300 pA
+            % stimulation
+            [val,ind] = min(abs(pA-adaptI));
+            subplot(7,3,[2,5,8]);
+            plot(Time,Waves(:,ind)*1000,'color','red'); hold on; plot(Time,Waves(:,zerowave)*1000,'color','black')
+            box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+            xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
+            lgd = legend(char(string(pA(ind))),char(string(pA(zerowave))),'linewidth',1);
+            title(lgd,'Current (pA)')
+            title('Exemplary Waves')
+
+            % extract and plot peak coordinates
+            peakInd = cell2mat(locs(ind));
+            peakVal = cell2mat(pks(ind));
+            peakTimes = zeros(size(peakInd));
+            peakAmps = zeros(size(peakVal));
+            if (size(peakTimes,1) < 2)
+                error ('Fewer than 2 AP so cannot analyse adaptation. Try increasing the stim.')
+            end
+            for pI = 1:size(peakTimes,1)
+                peakTimes(pI) = Time(peakInd(pI)+detStart);
+                peakAmps(pI) = peakVal(pI)*1000;
+            end
+            plot(peakTimes,peakAmps,'--ob','DisplayName','Peak Intervals')
+
+            % convert to instantaneous frequency and plot
+            ISI = diff(peakTimes);
+            peakHz = 1./ISI;
+            subplot(7,3,[3,6,9])
+            plot(peakHz,'-o',...
+                'LineWidth',1,...
+                'MarkerSize',10,...
+                'MarkerEdgeColor','r')
+            box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+            xlabel('Interspike Interval #'); ylabel('Instantaneous Frequency (Hz)');
+            legend('Spike Frequency','linewidth',1)
+
+            % calculate adaptation index and plot
+            adaptIndex = ISI(1)/ISI(end);
+            subplot(7,3,[13,16,19]);
+            names = char('','Initial','Final','');
+            x = [2,3];
+            y = [ISI(1),ISI(end)];
+            plot(x,y,'--ob',...
+                'LineWidth',1.5,...
+                'MarkerSize',6,...
+                'MarkerEdgeColor','r')
+            box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+            set(gca,'XTick',1:4,'XTickLabel',names)
+            xlim([1,4]);
+            xlabel('Interspike Interval #'); ylabel('Insterspike Interval (s)');
+            txt = {['Adaptation Index: '],[num2str(adaptIndex)]};
+            annotation('textbox','String',txt,'Position',subplot(7,3,[13,16,19]).Position,'VerticalAlignment','top','HorizontalAlignment','right','FitBoxToText','on','linewidth',1.5);
+
+            % plot as inst freq over time with raster and current injection
+            subplot(7,3,[14:15,17:18,20:21]);
+            fTime(1:2) = [0,peakTimes(1)-0.0001];
+            for fT = 1:size(peakTimes,1)
+                fTime(2+fT) = peakTimes(fT);
+            end
+            fVals(1:3) = [0,0,0];
+            for fV = 1:size(peakHz,1)
+                fVals(3+fV) = peakHz(fV);
+            end
+            plot(fTime,fVals,'linewidth',1.5,'DisplayName','Instantaneous Frequency (Hz)')
+            xlabel('Time (s)'); ylabel('Instantaneous Frequency (Hz)');
+            hold on; plot(peakTimes(1),65,"|",'color','r','linewidth',3,'MarkerSize',10,'DisplayName','Spikes')
+            hold on; plot(peakTimes,65,"|",'color','r','linewidth',3,'MarkerSize',10,'HandleVisibility','off')
+            box off; set(gcf,'color','white'); set(gca,'linewidth',2)
+            x = [0.5,1.5]; y = [-10,-10]; hold on; line(x,y,'linewidth',10,'color','black','DisplayName','Current Injection')
+            legend('linewidth',1)
+            xlim([0.4,1.4]); ylim([-20,70])
         end
-        plot(peakTimes,peakAmps,'--ob','DisplayName','Peak Intervals')
-    
-        % convert to instantaneous frequency and plot
-        ISI = diff(peakTimes);
-        peakHz = 1./ISI;
-        subplot(7,3,[3,6,9])
-        plot(peakHz,'-o',...
-            'LineWidth',1,...
-            'MarkerSize',10,...
-            'MarkerEdgeColor','r')
-        box off; set(gcf,'color','white'); set(gca,'linewidth',2)
-        xlabel('Interspike Interval #'); ylabel('Instantaneous Frequency (Hz)');
-        legend('Spike Frequency','linewidth',1)
-    
-        % calculate adaptation index and plot
-        adaptIndex = ISI(1)/ISI(end);
-        subplot(7,3,[13,16,19]);
-        names = char('','Initial','Final','');
-        x = [2,3];
-        y = [ISI(1),ISI(end)];
-        plot(x,y,'--ob',...
-            'LineWidth',1.5,...
-            'MarkerSize',6,...
-            'MarkerEdgeColor','r')
-        box off; set(gcf,'color','white'); set(gca,'linewidth',2)
-        set(gca,'XTick',1:4,'XTickLabel',names)
-        xlim([1,4]);
-        xlabel('Interspike Interval #'); ylabel('Insterspike Interval (s)');
-        txt = {['Adaptation Index: '],[num2str(adaptIndex)]};
-        annotation('textbox','String',txt,'Position',subplot(7,3,[13,16,19]).Position,'VerticalAlignment','top','HorizontalAlignment','right','FitBoxToText','on','linewidth',1.5);
-    
-        % plot as inst freq over time with raster and current injection
-        subplot(7,3,[14:15,17:18,20:21]);
-        fTime(1:2) = [0,peakTimes(1)-0.0001];
-        for fT = 1:size(peakTimes,1)
-            fTime(2+fT) = peakTimes(fT);
-        end
-        fVals(1:3) = [0,0,0];
-        for fV = 1:size(peakHz,1)
-            fVals(3+fV) = peakHz(fV);
-        end
-        plot(fTime,fVals,'linewidth',1.5,'DisplayName','Instantaneous Frequency (Hz)')
-        xlabel('Time (s)'); ylabel('Instantaneous Frequency (Hz)');
-        hold on; plot(peakTimes(1),65,"|",'color','r','linewidth',3,'MarkerSize',10,'DisplayName','Spikes')
-        hold on; plot(peakTimes,65,"|",'color','r','linewidth',3,'MarkerSize',10,'HandleVisibility','off')
-        box off; set(gcf,'color','white'); set(gca,'linewidth',2)
-        x = [0.5,1.5]; y = [-10,-10]; hold on; line(x,y,'linewidth',10,'color','black','DisplayName','Current Injection')
-        legend('linewidth',1)
-        xlim([0.4,1.4]); ylim([-20,70])
    
         %% Bridge Balance adjustments
         % apply necessary bridge balance adjustments if the user requested offline
@@ -953,7 +968,6 @@ end
 
 
 %% Dependencies
-% ephysIO
 % Function File: ephysIO
 %
 %  USAGE: To save a column-major XY array of electrophysiology data:
@@ -1023,8 +1037,9 @@ end
 %    Igor Packed experiment binary files (*.pxp)
 %    Igor binary wave files (*.ibw, *.bwav) (versions 2 and 5 only)
 %    WaveSurfer binary (HDF5) files (*.h5)
-%    ACQ4 binary (HDF5) files (*.ma) (no compression only)
+%    ACQ4 binary (HDF5) files (*.ma) (no compression only, ch 0 auto-selects primary)
 %    GINJ2 MATLAB binary files (*.mat)
+%    PackIO binary files (*.paq)
 %    Stimfit binary (HDF5) files (*.h5)
 %    Igor text files (*.itx,*.awav)
 %    Axon text files (*.atf)
@@ -1112,6 +1127,9 @@ end
 %  You should have received a copy of the GNU General Public License
 %  along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+
+
+
 function [array,xdiff,xunit,yunit,names,notes,clist,saved] = ...
          ephysIO (arg1,array,xunit,yunit,names,notes,datatype,globvar) %#ok<*INUSD,*REDEF>
 
@@ -1183,7 +1201,7 @@ function [array,xdiff,xunit,yunit,names,notes,clist,saved] = ...
     %D = dir(sprintf('%s*',filename));
     %[junk,idx] = sort([D.datenum],'descend');
     %filename = D(idx(1)).name;
-    pat = ['(.\.nwb)*(.\.mat)*(.\.phy)*(.\.txt)*(.\.csv)*(.\.itx)*(\.awav)*(.\.atf)*(.\.ibw)*(.\.pxp)*'...
+    pat = ['(.\.nwb)*(.\.mat)*(.\.phy)*(.\.txt)*(.\.csv)*(.\.itx)*(\.awav)*(.\.atf)*(.\.ibw)*(.\.pxp)*(.\.paq)*'...
            '(.\.abf)*(.\.ma)*(.\.h5)*(.\.wcp)*(.\.EDR)*(\.axgd)*(\.axgx)*(\.dat)*(\.cfs)*(\.smr)*(\.tdms)*'];
     if isempty(regexpi(filename(end-minlim:end),pat))
       error('unsupported filetype for load')
@@ -1289,6 +1307,8 @@ function [array,xdiff,xunit,yunit,names,notes,clist,saved] = ...
       [array,xdiff,xunit,yunit,names,notes,saved] = PHYload (filename); %#ok<*ASGLU>
     elseif strcmpi(filename(end-3:end),'.mat')
       [array,xdiff,xunit,yunit,names,notes] = ginj2load (filename,ch); %#ok<*ASGLU>
+    elseif strcmpi(filename(end-3:end),'.paq')
+      [array,xdiff,xunit,yunit,names,notes] = paqload (filename,ch); %#ok<*ASGLU>
     elseif strcmpi(filename(end-3:end),'.txt')
       [array,xdiff,xunit,yunit,names,notes] = TXTread (filename,'\t');
     elseif strcmpi(filename(end-3:end),'.csv')
@@ -1299,7 +1319,7 @@ function [array,xdiff,xunit,yunit,names,notes,clist,saved] = ...
       [array,xdiff,xunit,yunit,names,notes] = ATFread (filename);
     elseif strcmpi(filename(end-2:end),'.ma')
       if exist('readMeta')
-        [array,xdiff,xunit,yunit,names,notes,clist] = MAload (filename,ch);
+        [array,xdiff,xunit,yunit,names,notes,clist,ch] = MAload (filename,ch);
       else
         error('the required helper function readMeta.m cannot be found')
       end
@@ -2499,7 +2519,7 @@ end
 
 %--------------------------------------------------------------------------
 
-function [array,xdiff,xunit,yunit,names,notes,clist] = MAload (filename,ch)
+function [array,xdiff,xunit,yunit,names,notes,clist,ch] = MAload (filename,ch)
 
   % ACQ4 HDF5 binary file
   % Only suitable for reading 'Clamp' files
@@ -2509,15 +2529,27 @@ function [array,xdiff,xunit,yunit,names,notes,clist] = MAload (filename,ch)
   end
 
   metadata = readMeta(filename);
-  if numel(metadata)<3
+  if (numel(metadata) < 3)
     error('the file is not a clamp recording trace')
   end
-
-  % (MATLAB) [PYTHON] Channel name
-  % (1)      [0]      command (IGNORED)
-  % (2)      [1]      primary
-  % (3)      [2]      secondary
-  ch=ch+1;  % Ignore channel 1 (command channel); consider primary channel as the default
+  
+  % Autoselect primary channel if user sets channel number to 0 or []
+  if (ischar (ch))
+    ch = find (strcmpi (cellfun(@(c) c.name, metadata{1}.cols, ...
+                        'UniformOutput', false), ...
+                        sprintf ('''%s''', ch)));
+    if (isempty (ch))
+      error ('channel name not recognised')
+    end
+  else    
+    if (isempty (ch) || (ch == 0))
+      ch = find (strcmpi (cellfun(@(c) c.name, metadata{1}.cols, ...
+                          'UniformOutput', false), '''primary'''));
+    end
+    if (isempty (ch))
+      error ('no channel is named ''primary''')
+    end
+  end
 
   % Read units for x and y axes
   xunit = metadata{2}.units(2);
@@ -2532,17 +2564,13 @@ function [array,xdiff,xunit,yunit,names,notes,clist] = MAload (filename,ch)
   names{1,1} = regexprep(metadata{2}.name,'''','');
 
   % Read data
-  % (MATLAB) [PYTHON] Channel name
-  % (1)      [0]      command (IGNORED)
-  % (2)      [1]      primary
-  % (3)      [2]      secondary
   clist = cell(1);
-  fprintf('Number of recording channels: %d\n',numChannels-1); % not counting command channel
-  for i = 2:numChannels  % ignoring the command channel
-      clist{i-1,1} = regexprep(metadata{1}.cols{i}.name,'''','');
-      fprintf('%d) %s\n',i-1,clist{i-1})
+  fprintf('Number of recording channels: %d\n',numChannels); % not counting command channel
+  for i = 1:numChannels  % ignoring the command channel
+      clist{i,1} = regexprep(metadata{1}.cols{i}.name,'''','');
+      fprintf('%d) %s\n',i,clist{i})
   end
-  fprintf('loading channel %d...\n',ch-1)
+  fprintf('loading channel %d...\n',ch)
   filepath = pwd;
   data = h5read(filename,'/data');
   l = size(data,1);
@@ -3486,6 +3514,102 @@ end
 
 %--------------------------------------------------------------------------
 
+function [array,xdiff,xunit,yunit,names,notes,clist] = paqload (filename,ch)
+
+  % Initialize
+  xunit = 's';
+  yunit = 'V';
+  xdiff = 0;
+  array = [];
+  names = '';
+  notes = '';
+
+  % Load file
+  fid=fopen(filename);
+ 
+  % Read in rate, number of channels, and channel names
+  rate = fread(fid,1,'float32','b');
+  numchans = fread(fid,1,'float32','b');
+  for i=1:numchans
+    number_of_characters = fread(fid,1,'float32','b');
+    channelname{i} = [];
+    for j=1:number_of_characters
+      channelname{i} = [channelname{i}, strrep(fread(fid,1,'float32=>char', 'b'),' ','')];
+    end
+  end
+
+  % Read in hardware channel ('HWchan') and units if available (*.paq only)
+  for k=1:numchans
+    number_of_characters = fread(fid,1,'float32','b');
+    HWchan{k} = [];
+    for m=1:number_of_characters
+      HWchan{k} = [HWchan{k}, strrep(strrep(fread(fid,1,'float32=>char','b'),' ',''),'/','_')];
+    end
+  end
+  for n=1:numchans
+    number_of_characters = fread(fid,1,'float32','b');
+    units{n} = [];
+    for q=1:number_of_characters
+      units{n}=[units{n}, strrep(fread(fid,1,'float32=>char','b'),' ','')];
+    end
+  end
+  
+  % Get filesize and fposition (which should be after all header info)
+  dirinfo = dir(filename);
+  for n=1:numel(dirinfo)
+    if strcmp(dirinfo(n).name,filename)
+      filesize = dirinfo(n).bytes;
+    end
+  end
+
+  % Get 'channels'
+  % Try to get included channels, or ask user
+  try
+    % Fetch y data
+    y = fread(fid,[numchans,filesize/numchans],'*float32','b');
+    notchans = 1:numchans;
+    notchans(ch) = [];
+    y(notchans,:) = [];
+    y = y';
+    fclose(fid);
+
+    % Create x dimension
+    xOffset = 0;
+    xdiff = 1/rate;
+    xunit = 's';
+    nPoints = size(y,1);
+    x = 1:nPoints;
+    x = (x-1)';           % first data point at zero
+    x = xdiff*x+xOffset;
+ 
+    % Get data unit
+    switch units{ch}
+      case {'millivolts','mV'}
+        yunit = 'mV';
+      case {'volts','V'}
+        yunit = 'V';
+      case {'picoamps','pA'}
+        yunit = 'pA';
+      case {'amps','A'}
+        yunit = 'A';
+    end
+
+    % Form data array
+    array = cat(2,x,y);
+ 
+    % Create channel name
+    names = {'Time',channelname{ch}};
+    
+  catch
+
+    % Do nothing
+
+  end
+
+end
+
+%--------------------------------------------------------------------------
+
 function [array,xdiff,xunit,yunit,names,notes] = NWB2load (filename,ch)
 
   % Load Neurodata Without Borders (NWB) file (version 2)
@@ -4014,7 +4138,7 @@ function NWB2save (filename,array,xunit,yunit,names,notes)
   % Save in Neurodata Without Borders (NWB) format (version 2)
   % Only basic metadata is currently written to file (plans to develop further)
   % Scales data, converts to int16 and applies maximal data compression on entire wave series
-  % Waves defined using TimeIntervals type in intervals_epochs
+  % Waves defines using TimeIntervals type in intervals_epochs
   
   % If NWB file of filename already exists, remove it 
   if exist(sprintf('./%s',filename),'file')
@@ -4059,7 +4183,7 @@ function NWB2save (filename,array,xunit,yunit,names,notes)
   end
 
   % Perform data scaling, conversion to 16-bit and then compression
-  % Waves are concatenated (as it is optimal to compress all data in one go) 
+  % Waves are concatenate waves for optimal data compression
   % Times corresponding to the start and end times of each wave will be placed in nwb.intervals_epochs
   data = array(:,2:end);
   maxVal = max(abs(data(:)));
