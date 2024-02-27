@@ -6,7 +6,7 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 % ephysIO will automatically load the remaining files taking the order from
 % the folder name (ie, '000', '001, '002', etc).
 %
-% IStep v1.3.5 (last updated: 11/01/24)
+% IStep v1.3.6 (last updated: 14/02/24)
 % Author: OGSteele
 %
 % example use;
@@ -199,6 +199,10 @@ function [output] = IStep(LPF_Hz, winSize_ms,adaptI)
 %   - fixed bug which caused error if AHP trough is beyond end of AP window
 %   - fixed bugs in adaptation analysis that become apparent if no APs
 
+% 14.02.24 [OGS] v1.3.6
+%   - added fix to prevent inclusion of abnormally sharp APs, worth keeping
+%   an eye on for future analysis ('MinPeakWidth',10, ...)
+
 %% Code
 
 % figure save toggle
@@ -214,7 +218,7 @@ numInputs = nargin;
 disp('---------')
 disp('Select the first file (from the first wave) in the recording, ephysIO will load the rest automatically')
 disp('---------')
-[file,path] = uigetfile('*.ma'); % select file of interest
+[file,path] = uigetfile('*.*'); % select file of interest
 clampfile = fullfile(path,file); % get full filepath of file
 if size(clampfile,2) < 5 % if the filepath is too short to make any sense
     disp('File selection cancelled, code aborted')
@@ -228,6 +232,7 @@ else % if filepath is longer than 5 characters, file selected
     splitPath = split(clampfile,filesep);
     newPath = char(string(join(splitPath(1:end-2),filesep)));
     cd(newPath)
+    clipboard('copy',pwd) % cheat to copy the current filepath to clipboard for Excel master sheets
     
     %% run analysis or not?
     % gives the user the option to abort if the data looks horrendous
@@ -297,6 +302,7 @@ else % if filepath is longer than 5 characters, file selected
             [pks{i},locs{i},w{i},p{i}] = findpeaks(Waves(round(detStart):round(detEnd),i),...
                 'MinPeakHeight',0,...
                 'MinPeakProminence',0.01,...
+                'MinPeakWidth',10, ...
                 'MaxPeakWidth',0.02*10^4,...
                 'MinPeakDistance',0.02*10^4,...
                 'WidthReference','halfheight');
@@ -358,7 +364,7 @@ else % if filepath is longer than 5 characters, file selected
                 outs(lp) = outs(lp) + detStart; % account for the detection zone
             end
         end
-        logicalIndexes =  outs < 40000 & outs > 1;
+        logicalIndexes =  outs < 40000 & outs > 1; % locate APs in the first region of the det zone
         wavenum_first = (size(locs,1)-(sum(logicalIndexes)-1)); % wave that the first action potential following stimulus injection occurs on
         subplot(7,4,[2,6,10]);
         plot(Time,Waves(:,wavenum_first)*1000,'color','red'); hold on; plot(Time,Waves(:,zerowave)*1000,'color','black')
@@ -857,7 +863,7 @@ else % if filepath is longer than 5 characters, file selected
             R = deltaV / I; % R (Ohms)
             IR = R / 1e6; % R (MegaOhms)
             % replot the whole of that IR figure
-            figure(fh); delete(IRtext)
+            figure(fh);
                 subplot(7,4,[19,23,27]); plot(Time,Waves(:,1)*1000,'color','black'); hold on; plot(Time,Waves(:,3)*1000,'color','red')
                 box off; set(gcf,'color','white'); set(gca,'linewidth',2)
                 xlabel('Time (s)'); ylabel('Membrane Potential (mV)');
